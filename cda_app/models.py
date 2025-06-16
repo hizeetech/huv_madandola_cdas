@@ -65,6 +65,7 @@ class ExecutiveMember(models.Model):
         return f"{self.name} ({self.position})"
 
 class Defaulter(models.Model):
+    image = models.ImageField(upload_to='defaulter_images/', blank=True, null=True)
     name = models.CharField(max_length=100)
     cda_choices = [
         ('Unity CDA', 'Unity CDA'),
@@ -98,6 +99,7 @@ class Event(models.Model):
     time = models.CharField(max_length=50, blank=True, null=True)
     location = models.CharField(max_length=200)
     description = models.TextField()
+    image = models.ImageField(upload_to='event_images/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.title} on {self.date}"
@@ -124,5 +126,27 @@ class NavbarImage(models.Model):
 
     def __str__(self):
         return f"Navbar Image ({self.position})"
+
+class PaidMember(models.Model):
+    image = models.ImageField(upload_to='paid_member_images/', blank=True, null=True)
+    name = models.CharField(max_length=100)
+    cda_choices = [
+        ('Unity CDA', 'Unity CDA'),
+        ('Harmony CDA', 'Harmony CDA'),
+        ('Valley-View CDA', 'Valley-View CDA'),
+    ]
+    cda = models.CharField(max_length=100, choices=cda_choices, verbose_name="CDA")
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    purpose_choices = [
+        ('Security Fees', 'Security Fees'),
+        ('Electricity', 'Electricity'),
+        ('Development Levy', 'Development Levy'),
+        ('Others', 'Others'),
+    ]
+    purpose_of_payment = models.CharField(max_length=200, choices=purpose_choices, verbose_name="Purpose of Payment")
+    payment_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.amount_paid} ({self.purpose_of_payment})"
 
 # Create your models here.

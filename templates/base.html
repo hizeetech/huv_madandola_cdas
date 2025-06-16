@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-{% load static %}
+<!DOCTYPE html> {% load static %}
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,25 +12,29 @@
             flex-direction: column;
             min-height: 100vh;
         }
+        
         .navbar-left-image,
         .navbar-right-image {
-            margin: 0 10px; /* Adjust as needed for spacing */
+            margin: 0 10px;
+            /* Adjust as needed for spacing */
         }
+        
         .footer {
             flex-shrink: 0;
             background-color: #f8f9fa;
             padding: 20px 0;
             text-align: center;
-            margin-top: auto; /* Push footer to the bottom */
+            margin-top: auto;
+            /* Push footer to the bottom */
         }
-
         /* Custom styles for registration form */
+        
         .card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
+        
         .card-header {
             background-color: #007bff;
             color: white;
@@ -40,23 +44,23 @@
             padding: 15px;
             font-size: 1.25rem;
         }
-
+        
         .card-body {
             padding: 30px;
         }
-
+        
         .form-control {
             border-radius: 8px;
             border: 1px solid #ced4da;
             padding: 10px 15px;
             margin-bottom: 15px;
         }
-
+        
         .form-control:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
-
+        
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
@@ -65,19 +69,19 @@
             font-size: 1.1rem;
             transition: background-color 0.3s ease;
         }
-
+        
         .btn-primary:hover {
             background-color: #0056b3;
             border-color: #0056b3;
         }
-
+        
         p.errorlist {
             color: red;
             font-size: 0.9em;
             margin-top: -10px;
             margin-bottom: 10px;
         }
-
+        
         ul.errorlist {
             color: red;
             font-size: 0.9em;
@@ -88,12 +92,12 @@
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #343a40;">
         <div class="navbar-left-image">
             {% if left_image %}
-                <img src="{{ left_image.image.url }}" alt="{{ left_image.description }}" height="200">
-            {% endif %}
+            <img src="{{ left_image.image.url }}" alt="{{ left_image.description }}" height="200"> {% endif %}
         </div>
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,8 +114,10 @@
                         margin: 0 15px;
                         transition: background-color 0.3s ease;
                     }
+                    
                     .navbar-nav .nav-link:hover {
-                        background-color: #007bff; /* A blue hover effect */
+                        background-color: #007bff;
+                        /* A blue hover effect */
                         color: white;
                     }
                 </style>
@@ -138,20 +144,18 @@
             </ul>
             <div class="navbar-right-image ml-auto">
                 {% if right_image %}
-                    <img src="{{ right_image.image.url }}" alt="{{ right_image.description }}" height="200">
-                {% endif %}
+                <img src="{{ right_image.image.url }}" alt="{{ right_image.description }}" height="200"> {% endif %}
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
-        {% block content %}
-        {% endblock %}
+        {% block content %} {% endblock %}
     </div>
 
     <footer class="footer mt-auto">
         <div class="container">
-            <p>&copy; 2024 Madandola Estate CDA. All rights reserved.</p>
+            <p>&copy; 2025 Madandola Estate CDA. All rights reserved.</p>
         </div>
     </footer>
 
@@ -159,4 +163,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
+
 </html>
