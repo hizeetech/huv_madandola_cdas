@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember
+from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement
 
 def home(request):
     executive_members = ExecutiveMember.objects.all()
@@ -64,6 +65,20 @@ def profile(request):
 def events(request):
     all_events = Event.objects.all().order_by('date')
     return render(request, 'events.html', {'all_events': all_events})
+
+@login_required
+def committee_detail(request, committee_id):
+    committee = get_object_or_404(Committee, pk=committee_id)
+    members = CommitteeMember.objects.filter(committee=committee)
+    todos = CommitteeToDo.objects.filter(committee=committee)
+    achievements = CommitteeAchievement.objects.filter(committee=committee)
+    context = {
+        'committee': committee,
+        'members': members,
+        'todos': todos,
+        'achievements': achievements,
+    }
+    return render(request, 'committee_detail.html', context)
 
 @login_required
 def pay_levy(request, levy_id):

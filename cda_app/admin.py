@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import admin
-from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember
+from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement
 
 admin.site.register(CDA)
 admin.site.register(UserProfile)
@@ -29,3 +29,8 @@ class PaidMemberAdmin(admin.ModelAdmin):
     list_filter = ('cda', 'purpose_of_payment', 'payment_date')
 
 admin.site.register(PaidMember, PaidMemberAdmin)
+
+admin.site.register(Committee)
+admin.site.register(CommitteeMember)
+admin.site.register(CommitteeToDo)
+admin.site.register(CommitteeAchievement)

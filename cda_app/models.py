@@ -149,4 +149,40 @@ class PaidMember(models.Model):
     def __str__(self):
         return f"{self.name} - {self.amount_paid} ({self.purpose_of_payment})"
 
+
+class Committee(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    description = models.TextField(blank=True, null=True)
+    roles_responsibilities = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class CommitteeMember(models.Model):
+    committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name='members')
+    name = models.CharField(max_length=100)
+    post = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='committee_members/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.committee.name}"
+
+class CommitteeToDo(models.Model):
+    committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name='todos')
+    task = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)
+    due_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.task} ({self.committee.name})"
+
+class CommitteeAchievement(models.Model):
+    committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name='achievements')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.committee.name})"
+
 # Create your models here.
