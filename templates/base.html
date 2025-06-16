@@ -12,6 +12,10 @@
             flex-direction: column;
             min-height: 100vh;
         }
+        .navbar-left-image,
+        .navbar-right-image {
+            margin: 0 10px; /* Adjust as needed for spacing */
+        }
         .footer {
             flex-shrink: 0;
             background-color: #f8f9fa;
@@ -85,13 +89,32 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{% url 'home' %}">Madandola Estate CDA</a>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #343a40;">
+        <div class="navbar-left-image">
+            {% if left_image %}
+                <img src="{{ left_image.image.url }}" alt="{{ left_image.description }}" height="200">
+            {% endif %}
+        </div>
+
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav justify-content-center w-100">
+                <style>
+                    .navbar-nav .nav-link {
+                        font-weight: bold;
+                        font-size: 1.25rem;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        margin: 0 15px;
+                        transition: background-color 0.3s ease;
+                    }
+                    .navbar-nav .nav-link:hover {
+                        background-color: #007bff; /* A blue hover effect */
+                        color: white;
+                    }
+                </style>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'home' %}">Home</a>
                 </li>
@@ -113,6 +136,11 @@
                 </li>
                 {% endif %}
             </ul>
+            <div class="navbar-right-image ml-auto">
+                {% if right_image %}
+                    <img src="{{ right_image.image.url }}" alt="{{ right_image.description }}" height="200">
+                {% endif %}
+            </div>
         </div>
     </nav>
 

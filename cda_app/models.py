@@ -113,4 +113,16 @@ class CommunityInfo(models.Model):
     def __str__(self):
         return self.title
 
+class NavbarImage(models.Model):
+    POSITION_CHOICES = [
+        ('left', 'Left Corner'),
+        ('right', 'Right Corner'),
+    ]
+    image = models.ImageField(upload_to='navbar_images/')
+    position = models.CharField(max_length=10, choices=POSITION_CHOICES, unique=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Navbar Image ({self.position})"
+
 # Create your models here.

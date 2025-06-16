@@ -2,18 +2,22 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter
+from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage
 
 def home(request):
     executive_members = ExecutiveMember.objects.all()
     upcoming_events = Event.objects.all().order_by('date')
     community_info = CommunityInfo.objects.all().order_by('-published_date')
     defaulters = Defaulter.objects.all()
+    left_image = NavbarImage.objects.filter(position='left').first()
+    right_image = NavbarImage.objects.filter(position='right').first()
     context = {
         'executive_members': executive_members,
         'upcoming_events': upcoming_events,
         'community_info': community_info,
-        'defaulters': defaulters
+        'defaulters': defaulters,
+        'left_image': left_image,
+        'right_image': right_image
     }
     return render(request, 'home.html', context)
 
