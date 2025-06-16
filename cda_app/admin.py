@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import admin
-from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement
+from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage
 
 admin.site.register(CDA)
 admin.site.register(UserProfile)
@@ -34,3 +34,12 @@ admin.site.register(Committee)
 admin.site.register(CommitteeMember)
 admin.site.register(CommitteeToDo)
 admin.site.register(CommitteeAchievement)
+
+admin.site.register(AdvertCategory)
+class AdvertItemAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'user', 'is_approved', 'published_date')
+    list_filter = ('is_approved', 'category', 'published_date')
+    search_fields = ('title', 'description', 'user__username')
+
+admin.site.register(AdvertItem, AdvertItemAdmin)
+admin.site.register(AdvertImage)

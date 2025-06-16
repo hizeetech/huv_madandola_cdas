@@ -3,7 +3,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement
+from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage
+from .forms import AdvertItemForm, AdvertImageFormSet
 
 def home(request):
     executive_members = ExecutiveMember.objects.all()
@@ -90,3 +91,41 @@ def pay_levy(request, levy_id):
         user_levy.is_paid = True
         user_levy.save()
     return redirect('profile')
+
+def advert_list(request):
+    category_name = request.GET.get('category')
+    if category_name:
+        # Assuming AdvertCategory has a 'name' field that matches the category names in the URL
+        advert_items = AdvertItem.objects.filter(is_approved=True, category=category_name).order_by('-published_date')
+    else:
+        advert_items = AdvertItem.objects.filter(is_approved=True).order_by('-published_date')
+
+    context = {
+        'advert_items': advert_items
+    }
+    return render(request, 'advert_list.html', context)
+
+def advert_detail(request, pk):
+    advert_item = get_object_or_404(AdvertItem, pk=pk)
+    return render(request, 'advert_detail.html', {'advert_item': advert_item})
+
+@login_required
+def create_advert(request):
+    if request.method == 'POST':
+        form = AdvertItemForm(request.POST, request.FILES)
+        formset = AdvertImageFormSet(request.POST, request.FILES, queryset=AdvertImage.objects.none())
+        if form.is_valid() and formset.is_valid():
+            advert_item = form.save(commit=False)
+            advert_item.user = request.user
+            advert_item.is_approved = False  # Set to False for admin approval
+            advert_item.save()
+            for form in formset.cleaned_data:
+                if form:
+                    image = form['image']
+                    is_main = form['is_main']
+                    AdvertImage.objects.create(advert_item=advert_item, image=image, is_main=is_main)
+            return redirect('advert_detail', pk=advert_item.pk)
+    else:
+        form = AdvertItemForm()
+        formset = AdvertImageFormSet(queryset=AdvertImage.objects.none())
+    return render(request, 'create_advert.html', {'form': form, 'formset': formset})

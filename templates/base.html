@@ -91,6 +91,7 @@
             margin-bottom: 10px;
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
@@ -133,6 +134,10 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'login' %}">Login</a>
                 </li>
+
+
+
+
                 {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'profile' %}">Profile</a>
@@ -141,10 +146,10 @@
                     <a class="nav-link" href="{% url 'logout' %}">Logout</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCommittees" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Committees
                     </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownCommittees">
                         {% for committee in committees %}
                             <a class="dropdown-item" href="{% url 'committee_detail' committee.id %}">{{ committee.name }}</a>
                         {% empty %}
@@ -152,6 +157,21 @@
                         {% endfor %}
                     </div>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdverts" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Adverts
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownAdverts">
+                        <a class="dropdown-item" href="{% url 'advert_list' %}?category=For%20Sale">For Sale</a>
+                        <a class="dropdown-item" href="{% url 'advert_list' %}?category=For%20Rent">For Rent</a>
+                        <a class="dropdown-item" href="{% url 'advert_list' %}?category=For%20Lease">For Lease</a>
+                    </div>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'create_advert' %}">Add Advert</a>
+                </li>
+                {% endif %}
                 {% endif %}
             </ul>
             <div class="navbar-right-image ml-auto">

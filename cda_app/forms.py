@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, CDA
+from .models import UserProfile, CDA, AdvertItem, AdvertImage
+from django.forms import inlineformset_factory
 
 from django import forms
 
@@ -29,3 +30,28 @@ class CustomAuthenticationForm(AuthenticationForm):
         super().__init__(*args, **kwargs)
         for field_name in self.fields:
             self.fields[field_name].widget.attrs.update({'class': 'form-control'})
+
+class AdvertItemForm(forms.ModelForm):
+    class Meta:
+        model = AdvertItem
+        fields = ['category', 'title', 'description', 'amount', 'location', 'condition', 'phone_number']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'condition': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter phone number (e.g., +2348012345678)'}),
+        }
+
+class AdvertImageForm(forms.ModelForm):
+    class Meta:
+        model = AdvertImage
+        fields = ['image', 'is_main']
+        widgets = {
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'is_main': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+AdvertImageFormSet = inlineformset_factory(AdvertItem, AdvertImage, form=AdvertImageForm, extra=5, max_num=5, can_delete=False)

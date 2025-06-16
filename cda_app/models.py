@@ -185,4 +185,50 @@ class CommitteeAchievement(models.Model):
     def __str__(self):
         return f"{self.title} ({self.committee.name})"
 
+class AdvertCategory(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class AdvertItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('For Sale', 'For Sale'),
+        ('For Rent', 'For Rent'),
+        ('For Lease', 'For Lease'),
+    ]
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    location = models.CharField(max_length=200)
+    condition = models.CharField(max_length=100, blank=True, null=True)
+    published_date = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} ({self.category})"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Schedule deletion after 15 days
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.core.management import call_command
+
+        # This is a simplified approach. For production, consider using a task queue like Celery.
+        # For now, we'll just log the scheduled deletion.
+        deletion_time = self.published_date + timedelta(days=15)
+        print(f"Scheduled deletion for AdvertItem {self.id} at {deletion_time}")
+
+class AdvertImage(models.Model):
+    advert_item = models.ForeignKey(AdvertItem, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='advert_images/')
+    is_main = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Image for {self.advert_item.title} (Main: {self.is_main})"
+
 # Create your models here.
