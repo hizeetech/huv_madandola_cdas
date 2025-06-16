@@ -1,0 +1,116 @@
+from django.db import models
+from django.contrib.auth.models import User
+
+class CDA(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    cda = models.ForeignKey(CDA, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return self.user.username
+
+class Levy(models.Model):
+    CDA_CHOICES = [
+        ('Unity CDA', 'Unity CDA'),
+        ('Harmony CDA', 'Harmony CDA'),
+        ('Valley-View CDA', 'Valley-View CDA'),
+    ]
+    LEVY_TYPE_CHOICES = [
+        ('Development Fees', 'Development Fees'),
+        ('Others', 'Others'),
+        ('Electricity', 'Electricity'),
+        ('Security Fees', 'Security Fees'),
+    ]
+
+    cda = models.ForeignKey(CDA, on_delete=models.CASCADE, null=True, blank=True, help_text="Leave blank for joint payments (Electricity, Security Fees)")
+    levy_type = models.CharField(max_length=50, choices=LEVY_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.levy_type} - {self.amount}"
+
+class UserLevy(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    levy = models.ForeignKey(Levy, on_delete=models.CASCADE)
+    amount_due = models.DecimalField(max_digits=10, decimal_places=2)
+    is_paid = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.levy.levy_type} - Due: {self.amount_due}"
+
+class Payment(models.Model):
+    user_levy = models.ForeignKey(UserLevy, on_delete=models.CASCADE)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Payment by {self.user_levy.user.username} for {self.user_levy.levy.levy_type}"
+
+
+class ExecutiveMember(models.Model):
+    cda = models.ForeignKey(CDA, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=100)
+    position = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    image = models.ImageField(upload_to='executive_members/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.position})"
+
+class Defaulter(models.Model):
+    name = models.CharField(max_length=100)
+    cda_choices = [
+        ('Unity CDA', 'Unity CDA'),
+        ('Harmony CDA', 'Harmony CDA'),
+        ('Valley-View CDA', 'Valley-View CDA'),
+    ]
+    cda = models.CharField(max_length=100, choices=cda_choices, verbose_name="CDA")
+    amount_indebted = models.DecimalField(max_digits=10, decimal_places=2)
+    debt_for_choices = [
+        ('Security Fees', 'Security Fees'),
+        ('Electricity', 'Electricity'),
+        ('Development Levy', 'Development Levy'),
+        ('Others', 'Others'),
+    ]
+    title_defaulted = models.CharField(max_length=200, choices=debt_for_choices, verbose_name="Debt For:")
+    status_choices = [
+        ('Pending', 'Pending'),
+        ('Resolved', 'Resolved'),
+        ('In Progress', 'In Progress'),
+        ('Indebt', 'Indebt'),
+    ]
+    status = models.CharField(max_length=50, choices=status_choices, default='Pending')
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.title_defaulted}"
+
+class Event(models.Model):
+    title = models.CharField(max_length=200)
+    date = models.DateField()
+    time = models.CharField(max_length=50, blank=True, null=True)
+    location = models.CharField(max_length=200)
+    description = models.TextField()
+
+    def __str__(self):
+        return f"{self.title} on {self.date}"
+
+class CommunityInfo(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    published_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Community Info"
+
+    def __str__(self):
+        return self.title
+
+# Create your models here.

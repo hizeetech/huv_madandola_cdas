@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Madandola Estate CDA{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">User Profile</h1>
+
+<div class="card">
+    <div class="card-header">Welcome, {{ user.username }}!</div>
+    <div class="card-body">
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>CDA:</strong> {{ user.profile.cda.name }}</p>
+
+        <h3 class="mt-4">Payment History</h3>
+        {% if payments %}
+            <ul class="list-group">
+                {% for payment in payments %}
+                    <li class="list-group-item">
+                        <strong>{{ payment.payment_type }}</strong> - Amount: {{ payment.amount }} - Date: {{ payment.date }}
+                        {% if payment.notes %}<br><small>Notes: {{ payment.notes }}</small>{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No payment history found.</p>
+        {% endif %}
+
+        <h3 class="mt-4">Outstanding Levies</h3>
+        {% if outstanding_levies %}
+            <ul class="list-group">
+                {% for levy in outstanding_levies %}
+                    <li class="list-group-item">
+                        <strong>{{ levy.levy_type }}</strong> - Amount Due: {{ levy.amount_due }}
+                        <form method="post" action="{% url 'pay_levy' levy.id %}" class="d-inline ml-3">
+                            {% csrf_token %}
+                            <input type="text" name="notes" placeholder="Purpose of payment" class="form-control form-control-sm d-inline w-auto">
+                            <button type="submit" class="btn btn-success btn-sm">Pay Now</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No outstanding levies.</p>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
