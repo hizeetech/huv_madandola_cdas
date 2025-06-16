@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, CDA, AdvertItem, AdvertImage
+from .models import UserProfile, CDA, AdvertItem, AdvertImage, AdvertMessage
 from django.forms import inlineformset_factory
 
 from django import forms
@@ -55,3 +55,13 @@ class AdvertImageForm(forms.ModelForm):
         }
 
 AdvertImageFormSet = inlineformset_factory(AdvertItem, AdvertImage, form=AdvertImageForm, extra=5, max_num=5, can_delete=False)
+
+class AdvertMessageForm(forms.ModelForm):
+    class Meta:
+        model = AdvertMessage
+        fields = ['name', 'phone_number', 'willing_amount']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your Name'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your Phone Number'}),
+            'willing_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Your Willing Amount'}),
+        }
