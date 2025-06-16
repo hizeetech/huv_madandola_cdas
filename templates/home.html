@@ -2,7 +2,10 @@
 <div class="row">
     <div class="col-12">
         <div class="jumbotron">
-            <h1 class="display-4">Welcome to Madandola Estate CDA!</h1>
+            <h1 class="display-4">Welcome to Madandola Estate CDAs {% if user.is_authenticated and user.userprofile.image %}
+                <img src="{{ user.userprofile.image.url }}" alt="User Profile Image" class="rounded-circle ml-3" width="80" height="80"> {% endif %}
+            </h1>
+
         </div>
     </div>
     <div class="col-12">

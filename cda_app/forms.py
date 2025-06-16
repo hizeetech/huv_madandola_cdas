@@ -7,22 +7,28 @@ from django import forms
 
 class CustomUserCreationForm(UserCreationForm):
     cda = forms.ModelChoiceField(queryset=CDA.objects.all(), required=True, widget=forms.Select(attrs={'class': 'form-control'}))
+    image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control-file'}))
+
+    class Meta(UserCreationForm.Meta):
+        fields = UserCreationForm.Meta.fields + ('email', 'cda', 'image')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['cda'].widget.attrs.update({'class': 'form-control'})
+        self.fields['image'].widget.attrs.update({'class': 'form-control-file'})
         for field_name in self.fields:
-            if field_name != 'cda': # cda is already handled above
+            if field_name not in ['cda', 'image']:
                 self.fields[field_name].widget.attrs.update({'class': 'form-control'})
 
-    class Meta(UserCreationForm.Meta):
-        fields = UserCreationForm.Meta.fields + ('email',)
-
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-            UserProfile.objects.create(user=user, cda=self.cleaned_data['cda'])
+        user = super().save(commit=True) # Ensure user is saved
+        user_profile, created = UserProfile.objects.get_or_create(user=user)
+
+        if self.cleaned_data['cda']:
+            user_profile.cda = self.cleaned_data['cda']
+        if self.cleaned_data['image']:
+            user_profile.image = self.cleaned_data['image']
+        user_profile.save()
         return user
 
 class CustomAuthenticationForm(AuthenticationForm):

@@ -29,9 +29,11 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')
+            user = form.save(commit=False)
+            user.is_active = False  # Deactivate user until approved
+            user.save()
+            UserProfile.objects.filter(user=user).update(is_approved=False)
+            return render(request, 'registration_pending.html') # Redirect to a pending approval page
     else:
         form = CustomUserCreationForm()
     return render(request, 'registration.html', {'form': form})
@@ -114,16 +116,23 @@ def create_advert(request):
     if request.method == 'POST':
         form = AdvertItemForm(request.POST, request.FILES)
         formset = AdvertImageFormSet(request.POST, request.FILES, queryset=AdvertImage.objects.none())
+        print(f"Debug: Form is valid: {form.is_valid()}")
+        print(f"Debug: Form errors: {form.errors}")
+        print(f"Debug: Formset is valid: {formset.is_valid()}")
+        print(f"Debug: Formset errors: {formset.errors}")
         if form.is_valid() and formset.is_valid():
             advert_item = form.save(commit=False)
             advert_item.user = request.user
             advert_item.is_approved = False  # Set to False for admin approval
             advert_item.save()
-            for form in formset.cleaned_data:
-                if form:
-                    image = form['image']
-                    is_main = form['is_main']
-                    AdvertImage.objects.create(advert_item=advert_item, image=image, is_main=is_main)
+            print(f"Debug: Formset cleaned data: {formset.cleaned_data}")
+            for image_data in formset.cleaned_data:
+                # Check if the formset data is not empty and not marked for deletion
+                if image_data and not image_data.get('DELETE', False):
+                    image = image_data.get('image')
+                    is_main = image_data.get('is_main', False)
+                    if image:
+                        AdvertImage.objects.create(advert_item=advert_item, image=image, is_main=is_main)
             return redirect('advert_detail', pk=advert_item.pk)
     else:
         form = AdvertItemForm()

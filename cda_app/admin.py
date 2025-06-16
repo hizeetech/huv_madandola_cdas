@@ -1,9 +1,31 @@
 from django.contrib import admin
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage
 
 admin.site.register(CDA)
-admin.site.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cda', 'is_approved')
+    list_filter = ('is_approved', 'cda')
+    search_fields = ('user__username', 'cda__name')
+    actions = ['approve_users']
+
+    def approve_users(self, request, queryset):
+        queryset.update(is_approved=True)
+        for user_profile in queryset:
+            user_profile.user.is_active = True
+            user_profile.user.save()
+        self.message_user(request, "Selected users have been approved and activated.")
+    approve_users.short_description = "Approve selected users"
+
+admin.site.unregister(User)
+
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active', 'is_staff', 'is_superuser')
+
+admin.site.register(User, CustomUserAdmin)
+admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Levy)
 admin.site.register(UserLevy)
 admin.site.register(Payment)
