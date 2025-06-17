@@ -3,21 +3,37 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Madandola Estate CDA{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            font-size: 1rem;
         }
+        /* Navigation */
         
         .navbar-left-image,
         .navbar-right-image {
             margin: 0 10px;
-            /* Adjust as needed for spacing */
+            max-width: 150px;
+            height: auto;
         }
+        
+        .navbar-nav .nav-link {
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+        }
+        /* Footer */
         
         .footer {
             flex-shrink: 0;
@@ -25,70 +41,92 @@
             padding: 20px 0;
             text-align: center;
             margin-top: auto;
-            /* Push footer to the bottom */
+            font-size: 0.9rem;
         }
-        /* Custom styles for registration form */
+        /* Cards */
         
         .card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
-        .card-header {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            padding: 15px;
-            font-size: 1.25rem;
-        }
-        
-        .card-body {
-            padding: 30px;
-        }
+        /* Forms */
         
         .form-control {
             border-radius: 8px;
-            border: 1px solid #ced4da;
             padding: 10px 15px;
             margin-bottom: 15px;
         }
+        /* Responsive Adjustments */
         
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        @media (max-width: 1200px) {
+            .navbar-nav .nav-link {
+                font-size: 1rem;
+                padding: 10px 12px;
+                margin: 0 8px;
+            }
         }
         
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            border-radius: 8px;
-            padding: 10px 20px;
-            font-size: 1.1rem;
-            transition: background-color 0.3s ease;
+        @media (max-width: 992px) {
+            .navbar-left-image,
+            .navbar-right-image {
+                max-width: 100px;
+            }
+            .navbar-nav {
+                padding: 10px 0;
+            }
+            .dropdown-menu {
+                position: static;
+                float: none;
+                width: 100%;
+                margin-top: 0;
+                border: none;
+                box-shadow: none;
+            }
         }
         
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .navbar-nav .nav-link {
+                font-size: 0.95rem;
+                padding: 8px 10px;
+                margin: 0 5px;
+            }
+            .navbar-left-image,
+            .navbar-right-image {
+                max-width: 70px;
+            }
+            .footer {
+                padding: 15px 0;
+                font-size: 0.8rem;
+            }
         }
         
-        p.errorlist {
-            color: red;
-            font-size: 0.9em;
-            margin-top: -10px;
-            margin-bottom: 10px;
+        @media (max-width: 576px) {
+            .navbar-left-image,
+            .navbar-right-image {
+                max-width: 50px;
+                margin: 0 5px;
+            }
+            .navbar-nav .nav-link {
+                font-size: 0.9rem;
+                padding: 6px 8px;
+                margin: 0 3px;
+            }
+            body {
+                font-size: 0.9rem;
+            }
         }
         
-        ul.errorlist {
-            color: red;
-            font-size: 0.9em;
-            list-style-type: none;
-            padding-left: 0;
-            margin-top: -10px;
-            margin-bottom: 10px;
+        @media (max-width: 400px) {
+            .navbar-nav .nav-link {
+                font-size: 0.8rem;
+                padding: 5px;
+                margin: 0 2px;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -98,7 +136,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #343a40;">
         <div class="navbar-left-image">
             {% if left_image %}
-            <img src="{{ left_image.image.url }}" alt="{{ left_image.description }}" height="200"> {% endif %}
+            <img src="{{ left_image.image.url }}" alt="{{ left_image.description }}" class="img-fluid"> {% endif %}
         </div>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +154,24 @@
                         transition: background-color 0.3s ease;
                     }
                     
+                    @media (max-width: 768px) {
+                        .navbar-nav .nav-link {
+                            font-size: 1rem;
+                            /* Smaller font size on small screens */
+                            padding: 8px 10px;
+                            margin: 0 5px;
+                        }
+                    }
+                    
+                    @media (max-width: 576px) {
+                        .navbar-nav .nav-link {
+                            font-size: 0.9rem;
+                            /* Even smaller font size on extra small screens */
+                            padding: 5px 8px;
+                            margin: 0 2px;
+                        }
+                    }
+                    
                     .navbar-nav .nav-link:hover {
                         background-color: #007bff;
                         /* A blue hover effect */
@@ -125,9 +181,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'home' %}">Home</a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a class="nav-link" href="{% url 'events' %}">Events</a>
-                </li>
+                </li> -->
                 {% if not user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'registration' %}">Register</a>
@@ -193,7 +249,7 @@
             </ul>
             <div class="navbar-right-image ml-auto">
                 {% if right_image %}
-                <img src="{{ right_image.image.url }}" alt="{{ right_image.description }}" height="200"> {% endif %}
+                <img src="{{ right_image.image.url }}" alt="{{ right_image.description }}" class="img-fluid"> {% endif %}
             </div>
         </div>
     </nav>
