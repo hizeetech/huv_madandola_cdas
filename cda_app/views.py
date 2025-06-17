@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import UserProfile, CDA, Levy, UserLevy, Payment, ExecutiveMember, Event, CommunityInfo, Defaulter, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage
+from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage
 from .forms import AdvertItemForm, AdvertImageFormSet
 
 def home(request):
@@ -11,6 +11,26 @@ def home(request):
     upcoming_events = Event.objects.all().order_by('date')
     community_info = CommunityInfo.objects.all().order_by('-published_date')
     defaulters = Defaulter.objects.all()
+
+    # Filtering logic
+    selected_cda = request.GET.get('cda')
+    selected_debt_for = request.GET.get('debt_for')
+
+    print(f"Debug: Request GET parameters: {request.GET}")
+    print(f"Debug: Initial defaulters count: {defaulters.count()}")
+    print(f"Debug: selected_cda: {selected_cda} (Type: {type(selected_cda)})\n")
+    print(f"Debug: selected_debt_for: {selected_debt_for} (Type: {type(selected_debt_for)})\n")
+
+    if selected_cda and selected_cda != 'All' and selected_cda != '':
+        defaulters = defaulters.filter(cda=selected_cda)
+
+    if selected_debt_for and selected_debt_for != 'All' and selected_debt_for != '':
+        defaulters = defaulters.filter(title_defaulted=selected_debt_for)
+
+    # Get unique CDA and Debt For choices for dropdowns
+    cdas = CDA.objects.all().order_by('name') # Get all CDA objects
+    debt_for_choices = Defaulter.debt_for_choices # Use choices directly from the model
+
     paid_members = PaidMember.objects.all().order_by('-payment_date')
     left_image = NavbarImage.objects.filter(position='left').first()
     right_image = NavbarImage.objects.filter(position='right').first()
@@ -21,7 +41,11 @@ def home(request):
         'defaulters': defaulters,
         'paid_members': paid_members,
         'left_image': left_image,
-        'right_image': right_image
+        'right_image': right_image,
+        'cdas': cdas,
+        'debt_for_choices': debt_for_choices,
+        'selected_cda': selected_cda,
+        'selected_debt_for': selected_debt_for,
     }
     return render(request, 'home.html', context)
 
@@ -138,3 +162,18 @@ def create_advert(request):
         form = AdvertItemForm()
         formset = AdvertImageFormSet(queryset=AdvertImage.objects.none())
     return render(request, 'create_advert.html', {'form': form, 'formset': formset})
+
+@login_required
+def artisans_list(request):
+    artisans = Artisan.objects.all()
+    return render(request, 'artisans_list.html', {'artisans': artisans})
+
+@login_required
+def professionals_list(request):
+    professionals = Professional.objects.all()
+    return render(request, 'professionals_list.html', {'professionals': professionals})
+
+@login_required
+def project_donations_list(request):
+    project_donations = ProjectDonation.objects.all()
+    return render(request, 'project_donations_list.html', {'project_donations': project_donations})

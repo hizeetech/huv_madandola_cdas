@@ -90,6 +90,7 @@ class Defaulter(models.Model):
         ('Indebt', 'Indebt'),
     ]
     status = models.CharField(max_length=50, choices=status_choices, default='Pending')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -193,6 +194,34 @@ class AdvertCategory(models.Model):
     def __str__(self):
         return self.name
 
+class ProjectDonation(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    estimated_cost = models.DecimalField(max_digits=15, decimal_places=2)
+    bank_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=20)
+    beneficiary = models.CharField(max_length=100)
+    reference_number = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class ProjectImage(models.Model):
+    project = models.ForeignKey(ProjectDonation, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='project_images/')
+
+    def __str__(self):
+        return f"Image for {self.project.title}"
+
+class DonationProof(models.Model):
+    project = models.ForeignKey(ProjectDonation, on_delete=models.CASCADE, related_name='proofs')
+    image = models.ImageField(upload_to='donation_proofs/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Proof for {self.project.title}"
+
 class AdvertItem(models.Model):
     CATEGORY_CHOICES = [
         ('For Sale', 'For Sale'),
@@ -230,3 +259,21 @@ class AdvertMessage(models.Model):
 
     def __str__(self):
         return f"Message for {self.advert.title} from {self.name}"
+
+class Artisan(models.Model):
+    image = models.ImageField(upload_to='artisans/', blank=True, null=True)
+    name = models.CharField(max_length=100)
+    job_title = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+class Professional(models.Model):
+    image = models.ImageField(upload_to='professionals/', blank=True, null=True)
+    name = models.CharField(max_length=100)
+    job_title = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.name

@@ -1,4 +1,5 @@
-{% extends 'base.html' %} {% load static %} {% load custom_filters %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% load humanize %} {% load static %} {% load custom_filters %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
 <div class="row">
     <div class="col-12">
         <div class="jumbotron">
@@ -19,7 +20,7 @@
                     <img src="{% static 'images/default_profile.png' %}" alt="Default Image" class="rounded-circle mb-2" width="100" height="100"> {% endif %}
                     <h5>{{ member.name }}</h5>
                     <p><strong>CDA:</strong> {{ member.cda }}</p>
-                    <p><strong>Amount Paid:</strong> ₦{{ member.amount_paid }}</p>
+                    <p><strong>Amount Paid:</strong> ₦{{ member.amount_paid|intcomma }}</p>
                     <p><strong>Purpose:</strong> {{ member.purpose_of_payment }}</p>
                     <p><strong>Date:</strong> {{ member.payment_date|date:"M d, Y" }}</p>
                 </div>
@@ -153,8 +154,65 @@
 </div>
 
 <h2 class="mt-4">Defaulters/Owing Members</h2>
+
+<div class="row mb-3">
+    <div class="col-md-6 offset-md-6">
+        <form method="get" class="form-inline float-right">
+            <div class="form-group mr-2">
+                <label for="cda_filter" class="sr-only">Filter by CDA</label>
+                <select name="cda" id="cda_filter" class="form-control">
+                    <option value="">All CDAs</option>
+                    {% for cda_obj in cdas %}
+                        <option value="{{ cda_obj.name }}" {% if request.GET.cda == cda_obj.name %}selected{% endif %}>{{ cda_obj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mr-2">
+                <label for="debt_for_filter" class="sr-only">Filter by Debt For</label>
+                <select name="debt_for" id="debt_for_filter" class="form-control">
+                    <option value="">All Debt Reasons</option>
+                    {% for choice in debt_for_choices %}
+                        <option value="{{ choice.0 }}" {% if request.GET.debt_for == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+</div>
+
 <div class="alert alert-warning" role="alert">
     <p>The following members have outstanding payments. Please settle your dues to support community development.</p>
+</div>
+
+
+<!-- <div class="row mb-3">
+    <div class="col-md-6 offset-md-6">
+        <form method="get" class="form-inline float-right">
+            <div class="form-group mr-2">
+                <label for="cda_filter" class="sr-only">Filter by CDA</label>
+                <select name="cda" id="cda_filter" class="form-control">
+                    <option value="">All CDAs</option>
+                    {% for cda_obj in cdas %}
+                        <option value="{{ cda_obj.name }}" {% if selected_cda == cda_obj.name %}selected{% endif %}>{{ cda_obj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group mr-2">
+                <label for="debt_for_filter" class="sr-only">Filter by Debt For</label>
+                <select name="debt_for" id="debt_for_filter" class="form-control">
+                    <option value="">All Debt Reasons</option>
+                    {% for choice_value, choice_label in debt_for_choices %}
+                        <option value="{{ choice_value }}" {% if selected_debt_for == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+</div> -->
+
+<div class="table-responsive">
     <table class="table table-striped table-bordered">
         <thead>
             <tr>
@@ -163,7 +221,7 @@
                 <th>CDA</th>
                 <th>Amount Indebted</th>
                 <th>Debt For</th>
-                <th>Status</th>
+                <th>Phone Number</th>
                 <th>Notes</th>
             </tr>
         </thead>
@@ -176,9 +234,9 @@
                 </td>
                 <td>{{ defaulter.name }}</td>
                 <td>{{ defaulter.cda }}</td>
-                <td>₦{{ defaulter.amount_indebted }}</td>
+                <td>₦{{ defaulter.amount_indebted|intcomma }}</td>
                 <td>{{ defaulter.title_defaulted }}</td>
-                <td>{{ defaulter.status }}</td>
+                <td>{{ defaulter.phone_number }}</td>
                 <td>{{ defaulter.notes|default:"N/A" }}</td>
             </tr>
             {% empty %}

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Project Donations{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Project Donations</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">S/N</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Estimated Cost</th>
+                    <th scope="col">Bank Name</th>
+                    <th scope="col">Account Number</th>
+                    <th scope="col">Beneficiary</th>
+                    <th scope="col">Reference Number</th>
+                    <th scope="col">Images</th>
+
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in project_donations %}
+                <tr>
+                    <th scope="row">{{ forloop.counter }}</th>
+                    <td>{{ project.title }}</td>
+                    <td>
+                        <span id="short-description-{{ project.id }}">{{ project.description|wordwrap:5|truncatechars:50 }}</span>
+                        <span id="full-description-{{ project.id }}" style="display: none;">{{ project.description }}</span>
+                        {% if project.description|wordcount > 5 %}
+                            <a href="#" onclick="toggleDescription({{ project.id }}); return false;" id="toggle-link-{{ project.id }}">Read More</a>
+                        {% endif %}
+                    </td>
+                    <td>₦{{ project.estimated_cost|floatformat:2|intcomma }}</td>
+                    <td>{{ project.bank_name }}</td>
+                    <td>{{ project.account_number }}</td>
+                    <td>{{ project.beneficiary }}</td>
+                    <td>{{ project.reference_number }}</td>
+                    <td>
+                        {% for image in project.images.all %}
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-src="{{ image.image.url }}">
+                                <img src="{{ image.image.url }}" alt="Project Image" width="50" height="50" class="img-thumbnail m-1">
+                            </a>
+                        {% empty %}
+                            No Images
+                        {% endfor %}
+                    </td>
+
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11">No project donations available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Project Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" class="img-fluid" id="modalImage" alt="Project Image">
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function toggleDescription(projectId) {
+        var shortDesc = document.getElementById('short-description-' + projectId);
+        var fullDesc = document.getElementById('full-description-' + projectId);
+        var toggleLink = document.getElementById('toggle-link-' + projectId);
+
+        if (fullDesc.style.display === 'none') {
+            shortDesc.style.display = 'none';
+            fullDesc.style.display = 'inline';
+            toggleLink.innerText = 'Read Less';
+        } else {
+            shortDesc.style.display = 'inline';
+            fullDesc.style.display = 'none';
+            toggleLink.innerText = 'Read More';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var imageModal = document.getElementById('imageModal');
+        imageModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var imageUrl = button.getAttribute('data-bs-src');
+            var modalImage = imageModal.querySelector('#modalImage');
+            modalImage.src = imageUrl;
+            console.log('Modal image URL:', imageUrl); // Debugging line
+        });
+    });
+</script>
+{% endblock %}

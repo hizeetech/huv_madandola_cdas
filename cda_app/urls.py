@@ -13,4 +13,8 @@ urlpatterns = [
     path('adverts/', views.advert_list, name='advert_list'),
     path('adverts/<int:pk>/', views.advert_detail, name='advert_detail'),
     path('adverts/create/', views.create_advert, name='create_advert'),
+    path('artisans/', views.artisans_list, name='artisans_list'),
+    path('professionals/', views.professionals_list, name='professionals_list'),
+    path('project_donations/', views.project_donations_list, name='project_donations_list'),
+
 ]

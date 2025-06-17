@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Professionals</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Job Title</th>
+                <th>Phone Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for professional in professionals %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    {% if professional.image %}
+                        <img src="{{ professional.image.url }}" alt="{{ professional.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% else %}
+                        No Image
+                    {% endif %}
+                </td>
+                <td>{{ professional.name }}</td>
+                <td>{{ professional.job_title }}</td>
+                <td>{{ professional.phone_number }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No professionals found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
