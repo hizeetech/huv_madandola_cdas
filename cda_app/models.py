@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
 
 class CDA(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -198,11 +200,10 @@ class ProjectDonation(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     estimated_cost = models.DecimalField(max_digits=15, decimal_places=2)
-    bank_name = models.CharField(max_length=100)
-    account_number = models.CharField(max_length=20)
-    beneficiary = models.CharField(max_length=100)
-    reference_number = models.CharField(max_length=50)
-    created_at = models.DateTimeField(auto_now_add=True)
+    reference_number = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    account_number = models.CharField(max_length=100, blank=True, null=True)
+    beneficiary = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -215,12 +216,16 @@ class ProjectImage(models.Model):
         return f"Image for {self.project.title}"
 
 class DonationProof(models.Model):
-    project = models.ForeignKey(ProjectDonation, on_delete=models.CASCADE, related_name='proofs')
-    image = models.ImageField(upload_to='donation_proofs/')
+    project_donation = models.ForeignKey(ProjectDonation, on_delete=models.CASCADE, related_name='donation_proofs')
+    donator_name = models.CharField(max_length=100)
+    whatsapp_number = models.CharField(max_length=20)
+    donated_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_receipt_image = models.ImageField(upload_to='donation_proofs/')
+    donation_reference_number = models.CharField(max_length=100, blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Proof for {self.project.title}"
+        return f"Proof for {self.project_donation.title} by {self.donator_name}"
 
 class AdvertItem(models.Model):
     CATEGORY_CHOICES = [

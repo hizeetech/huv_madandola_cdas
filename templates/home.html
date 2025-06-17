@@ -1,8 +1,8 @@
 {% extends 'base.html' %} {% load humanize %} {% load static %} {% load custom_filters %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="jumbotron">
-            <h1 class="display-4">Welcome to Madandola Estate CDAs {% if user.is_authenticated and user.userprofile.image %}
+        <div class="jumbotron bg-primary text-white">
+            <h1 class="display-4 text-center font-weight-bold">Welcome to Madandola Estate CDAs {% if user.is_authenticated and user.userprofile.image %}
                 <img src="{{ user.userprofile.image.url }}" alt="User Profile Image" class="rounded-circle ml-3" width="80" height="80"> {% endif %}
             </h1>
 
@@ -37,7 +37,6 @@
                 height: 250px;
                 /* Adjust height as needed */
                 border: 1px solid #ddd;
-                padding: 10px;
                 box-sizing: border-box;
             }
             
@@ -56,12 +55,10 @@
                 border: 1px solid #eee;
                 border-radius: 8px;
                 padding: 15px;
-                margin-bottom: 10px;
-                /* Space between cards */
                 text-align: center;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 flex-shrink: 0;
-                width: 98%;
+                width: 100%;
                 /* Adjust width to fit container */
                 box-sizing: border-box;
             }
@@ -77,7 +74,7 @@
         </style>
     </div>
 </div>
-<h2 class="mt-4 text-center text-uppercase">Contact Community Development Association CDA</h2>
+<h2 class="mt-4 text-center text-uppercase">Contact Community Development Association CDA</h2><br>
 <div class="row">
     <div class="col-md-12">
         <div id="executiveMembersCarousel" class="carousel slide" data-ride="carousel">

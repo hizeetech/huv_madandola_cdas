@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, CDA, AdvertItem, AdvertImage, AdvertMessage
+from .models import UserProfile, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
 from django.forms import inlineformset_factory
 
 from django import forms
@@ -70,4 +70,16 @@ class AdvertMessageForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your Name'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your Phone Number'}),
             'willing_amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Your Willing Amount'}),
+        }
+
+class DonationProofForm(forms.ModelForm):
+    class Meta:
+        model = DonationProof
+        fields = ['donator_name', 'whatsapp_number', 'donated_amount', 'payment_receipt_image', 'donation_reference_number']
+        widgets = {
+            'donator_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'whatsapp_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'donated_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'payment_receipt_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'donation_reference_number': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }

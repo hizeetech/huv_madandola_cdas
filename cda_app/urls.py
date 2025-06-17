@@ -16,5 +16,6 @@ urlpatterns = [
     path('artisans/', views.artisans_list, name='artisans_list'),
     path('professionals/', views.professionals_list, name='professionals_list'),
     path('project_donations/', views.project_donations_list, name='project_donations_list'),
+    path('project_donations/<int:donation_id>/upload_proof/', views.upload_donation_proof, name='upload_donation_proof'),
 
 ]

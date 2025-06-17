@@ -12,6 +12,7 @@
                     <th>Estimated Cost</th>
                     <th>Images</th>
                     <th>Actions</th>
+                    <th>Payment Proof</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +38,11 @@
                         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
                             <i class="bi bi-cash-coin"></i> Donate
                         </button>
+                    </td>
+                    <td>
+                        <a href="{% url 'upload_donation_proof' donation_id=project.id %}" class="btn btn-info btn-sm">
+                            <i class="bi bi-upload"></i> Payment Proof
+                        </a>
                     </td>
                 </tr>
                 {% empty %}

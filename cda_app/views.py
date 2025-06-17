@@ -3,8 +3,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage
-from .forms import AdvertItemForm, AdvertImageFormSet
+from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage, DonationProof
+from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 
 def home(request):
     executive_members = ExecutiveMember.objects.all()
@@ -169,3 +169,17 @@ def professionals_list(request):
 def project_donations_list(request):
     project_donations = ProjectDonation.objects.all()
     return render(request, 'project_donations_list.html', {'project_donations': project_donations})
+
+@login_required
+def upload_donation_proof(request, donation_id):
+    project_donation = get_object_or_404(ProjectDonation, pk=donation_id)
+    if request.method == 'POST':
+        form = DonationProofForm(request.POST, request.FILES)
+        if form.is_valid():
+            donation_proof = form.save(commit=False)
+            donation_proof.project_donation = project_donation
+            donation_proof.save()
+            return redirect('project_donations_list')  # Redirect to the donations list after successful upload
+    else:
+        form = DonationProofForm(initial={'donation_reference_number': project_donation.reference_number})
+    return render(request, 'upload_donation_proof.html', {'form': form, 'project_donation': project_donation})

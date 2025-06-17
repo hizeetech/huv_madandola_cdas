@@ -84,7 +84,8 @@ class DonationProofInline(admin.TabularInline):
     extra = 1
 
 class ProjectDonationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'estimated_cost', 'bank_name', 'account_number', 'beneficiary', 'created_at')
+    list_display = ('title', 'estimated_cost', 'bank_name', 'account_number', 'beneficiary', 'reference_number')
+
     search_fields = ('title', 'bank_name', 'beneficiary')
     inlines = [ProjectImageInline, DonationProofInline]
 
