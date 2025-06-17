@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage, DonationProof
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
@@ -169,6 +170,22 @@ def professionals_list(request):
 def project_donations_list(request):
     project_donations = ProjectDonation.objects.all()
     return render(request, 'project_donations_list.html', {'project_donations': project_donations})
+
+def past_executives(request):
+    past_members = ExecutiveMember.objects.filter(end_date__lt=timezone.now()).order_by('-start_date')
+    context = {
+        'executive_members': past_members,
+        'title': 'Past Executive Members'
+    }
+    return render(request, 'executive_members.html', context)
+
+def present_executives(request):
+    present_members = ExecutiveMember.objects.filter(start_date__lte=timezone.now(), end_date__gte=timezone.now()).order_by('start_date')
+    context = {
+        'executive_members': present_members,
+        'title': 'Present Executive Members'
+    }
+    return render(request, 'executive_members.html', context)
 
 @login_required
 def upload_donation_proof(request, donation_id):

@@ -64,6 +64,8 @@ class ExecutiveMember(models.Model):
     position = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     image = models.ImageField(upload_to='executive_members/', blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.position})"

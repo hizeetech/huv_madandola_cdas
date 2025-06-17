@@ -29,7 +29,12 @@ admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(Levy)
 admin.site.register(UserLevy)
 admin.site.register(Payment)
-admin.site.register(ExecutiveMember)
+class ExecutiveMemberAdmin(admin.ModelAdmin):
+    list_display = ('name', 'position', 'start_date', 'end_date', 'phone_number', 'image')
+    list_filter = ('position', 'start_date', 'end_date')
+    search_fields = ('name', 'position')
+
+admin.site.register(ExecutiveMember, ExecutiveMemberAdmin)
 admin.site.register(CommunityInfo)
 class EventAdmin(admin.ModelAdmin):
     list_display = ('title', 'date', 'time', 'location', 'image')

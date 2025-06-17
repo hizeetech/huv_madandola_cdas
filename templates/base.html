@@ -146,6 +146,15 @@
                         <a class="dropdown-item" href="{% url 'advert_list' %}?category=For%20Lease">For Lease</a>
                     </div>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownExecutives" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Executives
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownExecutives">
+                        <a class="dropdown-item" href="{% url 'past_executives' %}">Past</a>
+                        <a class="dropdown-item" href="{% url 'present_executives' %}">Present</a>
+                    </div>
+                </li>
 
 
                 {% if user.is_authenticated %}
@@ -158,10 +167,8 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownCommittees">
                         {% for committee in committees %}
-                            <a class="dropdown-item" href="{% url 'committee_detail' committee.id %}">{{ committee.name }}</a>
-                        {% empty %}
-                            <a class="dropdown-item" href="#">No committees found</a>
-                        {% endfor %}
+                        <a class="dropdown-item" href="{% url 'committee_detail' committee.id %}">{{ committee.name }}</a> {% empty %}
+                        <a class="dropdown-item" href="#">No committees found</a> {% endfor %}
                     </div>
                 </li>
                 <li class="nav-item">
