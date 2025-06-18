@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load humanize %} {% load static %} {% load custom_filters %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
+{% extends 'base.html' %} {% load humanize %} {% load static %} {% load batch_filter %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
 <style>
     /* Jumbotron */
     
@@ -78,6 +78,17 @@
     
     .table-responsive {
         margin-bottom: 2rem;
+    }
+    /* Project Donations */
+    
+    .project-donations-section {
+        margin-top: 3rem;
+        margin-bottom: 3rem;
+    }
+    
+    .img-thumbnail {
+        max-width: 100px;
+        max-height: 100px;
     }
     /* Responsive adjustments */
     
@@ -250,10 +261,10 @@
         <div class="col-md-12">
             <div id="executiveMembersCarousel" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner">
-                    {% for i in executive_members|batch:3 %}
+                    {% for group in executive_members|batch:3 %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
                         <div class="d-flex justify-content-around">
-                            {% for member in i %}
+                            {% for member in group %}
                             <div class="text-center mx-2">
                                 {% if member.image %}
                                 <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle mb-3" width="150" height="150" style="border: 3px solid #555; box-shadow: 0 0 8px rgba(0,0,0,0.4);"> {% endif %}
@@ -301,90 +312,228 @@
     </div>
 
     <!-- Upcoming Events -->
-    <h2 class="mt-4">Upcoming Events</h2>
-    <div class="list-group">
-        {% for event in upcoming_events %}
-        <div class="list-group-item list-group-item-action flex-column align-items-start">
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">{{ event.title }}</h5>
-                <small>{{ event.date|date:"M d, Y" }}{% if event.time %} at {{ event.time }}{% endif %}</small>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="mb-4">Upcoming Events</h2>
+                <div class="row">
+                    <div class="col-md-12">
+                        {% if upcoming_events %}
+                        <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for event in upcoming_events %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <div class="card mb-3">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                {% if event.image %}
+                                                <img src="{{ event.image.url }}" class="img-fluid rounded-start" alt="{{ event.title }}"> {% else %}
+                                                <img src="{% static 'images/default_event.png' %}" class="img-fluid rounded-start" alt="Default Event Image"> {% endif %}
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">{{ event.title }}</h5>
+                                                    <p class="card-text">{{ event.description|truncatechars:150 }}</p>
+                                                    <p class="card-text"><small class="text-muted">Date: {{ event.date|date:"M d, Y" }}</small></p>
+                                                    <p class="card-text"><small class="text-muted">Time: {{ event.time|time:"h:i A" }}</small></p>
+                                                    <p class="card-text"><small class="text-muted">Location: {{ event.location }}</small></p>
+                                                    <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">View Details</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p>No upcoming events at the moment.</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            {% if event.image %} {% endif %}
-            <p class="mb-1">{{ event.description }}</p>
-            <small>{{ event.location }}</small>
         </div>
-        {% empty %}
-        <p>No upcoming events.</p>
-        {% endfor %}
+    </div>
+
+    <!-- Project Donations Section -->
+    <div class="container project-donations-section">
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="mb-4">Project Donations</h2>
+                {% if project_donations %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>S/N</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Reference Number</th>
+                                <th>Estimated Cost</th>
+                                <th>Images</th>
+                                <th>Actions</th>
+                                <th>Payment Proof</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in project_donations %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ project.title }}</td>
+                                <td>
+                                    <span id="short-description-{{ project.id }}">{{ project.description|truncatechars:50 }}</span>
+                                    <span id="full-description-{{ project.id }}" style="display: none;">{{ project.description }}</span> {% if project.description|length > 50 %}
+                                    <a href="#" onclick="toggleDescription({{ project.id }}); return false;" id="toggle-link-{{ project.id }}">Read More</a> {% endif %}
+                                </td>
+                                <td>{{ project.reference_number }}</td>
+                                <td>₦{{ project.estimated_cost|floatformat:2|intcomma }}</td>
+                                <td>
+                                    {% for image in project.images.all %}
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-src="{{ image.image.url }}">
+                                        <img src="{{ image.image.url }}" alt="Project Image" width="50" height="50" class="img-thumbnail m-1">
+                                    </a>
+                                    {% empty %} No Images {% endfor %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
+                                        <i class="fas fa-donate"></i> Donate
+                                    </button>
+                                </td>
+                                <td>
+                                    <a href="{% url 'upload_donation_proof' donation_id=project.id %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-upload"></i> Proof
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">No project donations available at the moment.</div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Defaulters/Owing Members -->
-    <h2 class="mt-4">Defaulters/Owing Members</h2>
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mt-4">Defaulters/Owing Members</h2>
 
-    <div class="row mb-3">
-        <div class="col-md-6 offset-md-6">
-            <form method="get" class="form-inline float-right">
-                <div class="form-group mr-2">
-                    <label for="cda_filter" class="sr-only">Filter by CDA</label>
-                    <select name="cda" id="cda_filter" class="form-control">
-                        <option value="">All CDAs</option>
-                        {% for value, label in cdas %}
-                            <option value="{{ value }}" {% if selected_cda == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="row mb-3">
+                <div class="col-md-6 offset-md-6">
+                    <form method="get" class="form-inline float-right">
+                        <div class="form-group mr-2">
+                            <label for="cda_filter" class="sr-only">Filter by CDA</label>
+                            <select name="cda" id="cda_filter" class="form-control">
+                                <option value="">All CDAs</option>
+                                {% for value, label in cdas %}
+                                    <option value="{{ value }}" {% if selected_cda == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label for="debt_for_filter" class="sr-only">Filter by Debt For</label>
+                            <select name="debt_for" id="debt_for_filter" class="form-control">
+                                <option value="">All Debt Reasons</option>
+                                {% for value, label in debt_for_choices %}
+                                    <option value="{{ value }}" {% if selected_debt_for == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </form>
                 </div>
-                <div class="form-group mr-2">
-                    <label for="debt_for_filter" class="sr-only">Filter by Debt For</label>
-                    <select name="debt_for" id="debt_for_filter" class="form-control">
-                        <option value="">All Debt Reasons</option>
-                        {% for value, label in debt_for_choices %}
-                            <option value="{{ value }}" {% if selected_debt_for == value %}selected{% endif %}>{{ label }}</option>
+            </div>
+
+            <div class="alert alert-warning" role="alert">
+                <p>The following members have outstanding payments. Please settle your dues to support community development.</p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>CDA</th>
+                            <th>Amount Indebted</th>
+                            <th>Debt For</th>
+                            <th>Phone Number</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for defaulter in defaulters %}
+                        <tr>
+                            <td>
+                                {% if defaulter.image %}
+                                <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" width="50" height="50" class="rounded-circle"> {% else %} N/A {% endif %}
+                            </td>
+                            <td>{{ defaulter.name }}</td>
+                            <td>{{ defaulter.cda }}</td>
+                            <td>₦{{ defaulter.amount_indebted|intcomma }}</td>
+                            <td>{{ defaulter.title_defaulted }}</td>
+                            <td>{{ defaulter.phone_number }}</td>
+                            <td>{{ defaulter.notes|default:"N/A" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No defaulters found.</td>
+                        </tr>
                         {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Filter</button>
-            </form>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="alert alert-warning" role="alert">
-        <p>The following members have outstanding payments. Please settle your dues to support community development.</p>
+<!-- Zoom Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark text-white border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Zoom Image</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 m-0 d-flex justify-content-center align-items-center" style="overflow: hidden;">
+                <div id="panzoom-container" class="w-100 h-100 d-flex justify-content-center align-items-center" style="overflow: hidden;">
+                    <img src="" id="modalImage" class="img-fluid" style="cursor: grab; max-width: none;" alt="Zoom Image">
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered">
-            <thead>
-                <tr>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>CDA</th>
-                    <th>Amount Indebted</th>
-                    <th>Debt For</th>
-                    <th>Phone Number</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for defaulter in defaulters %}
-                <tr>
-                    <td>
-                        {% if defaulter.image %}
-                        <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" width="50" height="50" class="rounded-circle"> {% else %} N/A {% endif %}
-                    </td>
-                    <td>{{ defaulter.name }}</td>
-                    <td>{{ defaulter.cda }}</td>
-                    <td>₦{{ defaulter.amount_indebted|intcomma }}</td>
-                    <td>{{ defaulter.title_defaulted }}</td>
-                    <td>{{ defaulter.phone_number }}</td>
-                    <td>{{ defaulter.notes|default:"N/A" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">No defaulters found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- Donate Modal -->
+<div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="donateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="donateModalLabel">Donation Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <h5 id="projectTitle" class="text-success mb-3"></h5>
+                <p><strong>Bank Name:</strong> <span id="bankName"></span></p>
+                <p><strong>Account Number:</strong> <span id="accountNumber"></span></p>
+                <p><strong>Beneficiary:</strong> <span id="beneficiary"></span></p>
+                <p><strong>Reference Number:</strong> <span id="referenceNumber"></span></p>
+                <div class="alert alert-info mt-3">
+                    Please use the above details to make your donation. Thank you for supporting this project!
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -442,6 +591,46 @@
                 slider.style.animationDuration = `${duration}s`;
             }
         }
+
+        // Initialize image modal
+        const imageModal = document.getElementById('imageModal');
+        if (imageModal) {
+            imageModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const imageSrc = button.getAttribute('data-bs-src');
+                const modalImage = imageModal.querySelector('#modalImage');
+                modalImage.src = imageSrc;
+            });
+        }
+
+        // Initialize donate modal
+        const donateModal = document.getElementById('donateModal');
+        if (donateModal) {
+            donateModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                document.getElementById('projectTitle').textContent = button.getAttribute('data-title');
+                document.getElementById('bankName').textContent = button.getAttribute('data-bank');
+                document.getElementById('accountNumber').textContent = button.getAttribute('data-account');
+                document.getElementById('beneficiary').textContent = button.getAttribute('data-beneficiary');
+                document.getElementById('referenceNumber').textContent = button.getAttribute('data-reference');
+            });
+        }
     });
+
+    function toggleDescription(projectId) {
+        const shortDesc = document.getElementById(`short-description-${projectId}`);
+        const fullDesc = document.getElementById(`full-description-${projectId}`);
+        const toggleLink = document.getElementById(`toggle-link-${projectId}`);
+
+        if (shortDesc.style.display === 'none') {
+            shortDesc.style.display = 'inline';
+            fullDesc.style.display = 'none';
+            toggleLink.textContent = 'Read More';
+        } else {
+            shortDesc.style.display = 'none';
+            fullDesc.style.display = 'inline';
+            toggleLink.textContent = 'Read Less';
+        }
+    }
 </script>
 {% endblock %}

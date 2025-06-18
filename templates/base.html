@@ -182,7 +182,10 @@
                     <a class="nav-link" href="{% url 'home' %}">Home</a>
                 </li>
                 <!-- <li class="nav-item">
-                    <a class="nav-link" href="{% url 'events' %}">Events</a>
+                    <a class="nav-link" href="{% url 'events' %}">Upcoming Events</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'project_donations_list' %}">Project Donations</a>
                 </li> -->
                 {% if not user.is_authenticated %}
                 <li class="nav-item">

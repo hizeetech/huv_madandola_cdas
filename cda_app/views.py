@@ -6,6 +6,7 @@ from django.utils import timezone
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage, DonationProof
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
+from .models import ProjectDonation
 
 def home(request):
     executive_members = ExecutiveMember.objects.all()
@@ -25,6 +26,7 @@ def home(request):
     paid_members = PaidMember.objects.all().order_by('-payment_date')
     left_image = NavbarImage.objects.filter(position='left').first()
     right_image = NavbarImage.objects.filter(position='right').first()
+    project_donations = ProjectDonation.objects.all()
 
     context = {
         'executive_members': executive_members,
@@ -38,6 +40,7 @@ def home(request):
         'debt_for_choices': Defaulter.debt_for_choices,
         'selected_cda': selected_cda,
         'selected_debt_for': selected_debt_for,
+        'project_donations': ProjectDonation.objects.all().prefetch_related('images'),
     }
     return render(request, 'home.html', context)
 

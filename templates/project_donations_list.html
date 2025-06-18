@@ -1,4 +1,71 @@
-{% extends 'base.html' %} {% load humanize %} {% block title %}Project Donations{% endblock %} {% block content %}
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Project Donations{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
+<script>
+    function toggleDescription(projectId) {
+        var shortDesc = document.getElementById('short-description-' + projectId);
+        var fullDesc = document.getElementById('full-description-' + projectId);
+        var toggleLink = document.getElementById('toggle-link-' + projectId);
+
+        if (fullDesc.style.display === 'none') {
+            shortDesc.style.display = 'none';
+            fullDesc.style.display = 'inline';
+            toggleLink.innerText = 'Read Less';
+        } else {
+            shortDesc.style.display = 'inline';
+            fullDesc.style.display = 'none';
+            toggleLink.innerText = 'Read More';
+        }
+    }
+
+    let panzoomInstance;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageModal = document.getElementById('imageModal');
+        const donateModal = document.getElementById('donateModal');
+
+        imageModal.addEventListener('show.bs.modal', function(event) {
+            const trigger = event.relatedTarget;
+            const imageUrl = trigger.getAttribute('data-bs-src');
+            const modalImage = document.getElementById('modalImage');
+
+            modalImage.src = imageUrl;
+
+            modalImage.onload = function() {
+                if (panzoomInstance) panzoomInstance.destroy();
+                panzoomInstance = Panzoom(modalImage, {
+                    maxScale: 5,
+                    contain: 'outside',
+                });
+                modalImage.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+            };
+        });
+
+        imageModal.addEventListener('hidden.bs.modal', function() {
+            if (panzoomInstance) {
+                panzoomInstance.destroy();
+                panzoomInstance = null;
+            }
+        });
+
+        donateModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('projectTitle').innerText = button.getAttribute('data-title');
+            document.getElementById('bankName').innerText = button.getAttribute('data-bank');
+            document.getElementById('accountNumber').innerText = button.getAttribute('data-account');
+            document.getElementById('beneficiary').innerText = button.getAttribute('data-beneficiary');
+            document.getElementById('referenceNumber').innerText = button.getAttribute('data-reference');
+        });
+    });
+</script>
+{% endblock extra_js %}
+
+{% block content %}
 <div class="container mt-5">
     <h2 class="mb-4">Project Donations</h2>
     <div class="table-responsive">
@@ -95,65 +162,5 @@
         </div>
     </div>
 </div>
-{% endblock %} {% block extra_js %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-<script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
 
-<script>
-    function toggleDescription(projectId) {
-        var shortDesc = document.getElementById('short-description-' + projectId);
-        var fullDesc = document.getElementById('full-description-' + projectId);
-        var toggleLink = document.getElementById('toggle-link-' + projectId);
-
-        if (fullDesc.style.display === 'none') {
-            shortDesc.style.display = 'none';
-            fullDesc.style.display = 'inline';
-            toggleLink.innerText = 'Read Less';
-        } else {
-            shortDesc.style.display = 'inline';
-            fullDesc.style.display = 'none';
-            toggleLink.innerText = 'Read More';
-        }
-    }
-
-    let panzoomInstance;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const imageModal = document.getElementById('imageModal');
-        const donateModal = document.getElementById('donateModal');
-
-        imageModal.addEventListener('show.bs.modal', function(event) {
-            const trigger = event.relatedTarget;
-            const imageUrl = trigger.getAttribute('data-bs-src');
-            const modalImage = document.getElementById('modalImage');
-
-            modalImage.src = imageUrl;
-
-            modalImage.onload = function() {
-                if (panzoomInstance) panzoomInstance.destroy();
-                panzoomInstance = Panzoom(modalImage, {
-                    maxScale: 5,
-                    contain: 'outside',
-                });
-                modalImage.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
-            };
-        });
-
-        imageModal.addEventListener('hidden.bs.modal', function() {
-            if (panzoomInstance) {
-                panzoomInstance.destroy();
-                panzoomInstance = null;
-            }
-        });
-
-        donateModal.addEventListener('show.bs.modal', function(event) {
-            const btn = event.relatedTarget;
-            document.getElementById('projectTitle').textContent = btn.getAttribute('data-title');
-            document.getElementById('bankName').textContent = btn.getAttribute('data-bank');
-            document.getElementById('accountNumber').textContent = btn.getAttribute('data-account');
-            document.getElementById('beneficiary').textContent = btn.getAttribute('data-beneficiary');
-            document.getElementById('referenceNumber').textContent = btn.getAttribute('data-reference');
-        });
-    });
-</script>
 {% endblock %}
