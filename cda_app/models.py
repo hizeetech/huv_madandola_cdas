@@ -257,6 +257,18 @@ class AdvertImage(models.Model):
     def __str__(self):
         return f"Image for {self.advert_item.title}"
 
+class Proposal(models.Model):
+    advert = models.ForeignKey(AdvertItem, on_delete=models.CASCADE, related_name='proposals')
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone_number = models.CharField(max_length=20)
+    proposed_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Proposal for {self.advert.title} by {self.name}"
+
 class AdvertMessage(models.Model):
     advert = models.ForeignKey(AdvertItem, on_delete=models.CASCADE, related_name='messages')
     name = models.CharField(max_length=100)

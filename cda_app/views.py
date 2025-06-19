@@ -1,15 +1,24 @@
-from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional, ProjectDonation, ProjectImage, DonationProof
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
 
+from .models import (
+    CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
+    Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, 
+    CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, 
+    Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal
+)
+from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
+from django.contrib import messages
+
+
 def home(request):
     executive_members = ExecutiveMember.objects.all()
+    committees = Committee.objects.all()
     upcoming_events = Event.objects.all().order_by('date')
     community_info = CommunityInfo.objects.all().order_by('-published_date')
     defaulters = Defaulter.objects.all()
@@ -30,6 +39,7 @@ def home(request):
 
     context = {
         'executive_members': executive_members,
+        'committees': committees,
         'upcoming_events': upcoming_events,
         'community_info': community_info,
         'defaulters': defaulters,
@@ -52,7 +62,7 @@ def register(request):
             user = form.save(commit=False)
             user.is_active = False  # Deactivate user until approved
             user.save()
-            UserProfile.objects.filter(user=user).update(is_approved=False)
+            UserProfile.objects.create(user=user, is_approved=False)
             return render(request, 'registration_pending.html') # Redirect to a pending approval page
     else:
         form = CustomUserCreationForm()
@@ -79,7 +89,7 @@ def user_logout(request):
 
 @login_required
 def profile(request):
-    user_profile = UserProfile.objects.get(user=request.user)
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     user_levies = UserLevy.objects.filter(user=request.user)
     payments = Payment.objects.filter(user_levy__user=request.user)
     outstanding_levies = UserLevy.objects.filter(user=request.user, is_paid=False)
@@ -88,6 +98,10 @@ def profile(request):
 def events(request):
     all_events = Event.objects.all().order_by('date')
     return render(request, 'events.html', {'all_events': all_events})
+
+def event_detail(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    return render(request, 'event_detail.html', {'event': event})
 
 @login_required
 def committee_detail(request, committee_id):
@@ -114,11 +128,15 @@ def pay_levy(request, levy_id):
         user_levy.save()
     return redirect('profile')
 
+
 def advert_list(request):
     category_name = request.GET.get('category')
+    user_filter = request.GET.get('user')
+    
     if category_name:
-        # Assuming AdvertCategory has a 'name' field that matches the category names in the URL
         advert_items = AdvertItem.objects.filter(is_approved=True, category=category_name).order_by('-published_date')
+    elif user_filter and request.user.is_authenticated:
+        advert_items = AdvertItem.objects.filter(is_approved=True, user=request.user).order_by('-published_date')
     else:
         advert_items = AdvertItem.objects.filter(is_approved=True).order_by('-published_date')
 
@@ -130,6 +148,34 @@ def advert_list(request):
 def advert_detail(request, pk):
     advert_item = get_object_or_404(AdvertItem, pk=pk)
     return render(request, 'advert_detail.html', {'advert_item': advert_item})
+
+def submit_proposal(request, advert_id):
+    if request.method == 'POST':
+        advert = get_object_or_404(AdvertItem, pk=advert_id)
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        proposed_amount = request.POST.get('proposed_amount')
+        notes = request.POST.get('notes', '')
+        
+        Proposal.objects.create(
+            advert=advert,
+            name=name,
+            email=email,
+            phone_number=phone_number,
+            proposed_amount=proposed_amount,
+            notes=notes
+        )
+        
+        messages.success(request, 'Your Negotiated Proposal is submitted successfully. Kindly wait patiently while the advertiser will communicate with you. Thank you')
+        return redirect('advert_detail', pk=advert_id)
+    return redirect('home')
+
+@login_required
+def proposal_list(request):
+    proposals = Proposal.objects.filter(advert__user=request.user).order_by('-created_at')
+    return render(request, 'proposal_list.html', {'proposals': proposals})
+
 
 @login_required
 def create_advert(request):
