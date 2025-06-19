@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'cda_app',
     'widget_tweaks',
+    
 ]
 
 MIDDLEWARE = [
@@ -65,6 +66,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cda_app.context_processors.committees',
+                'cda_app.context_processors.admin_counts',  # Add this line
             ],
         },
     },
@@ -130,3 +132,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Authentication Settings
+LOGIN_URL = 'login'  # Points to your login view
+LOGIN_REDIRECT_URL = 'home'  # Where to redirect after login
+LOGOUT_REDIRECT_URL = 'home'  # Where to redirect after logout

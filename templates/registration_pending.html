@@ -1,14 +1,10 @@
-{% extends 'base.html' %}
-
-{% block title %}Registration Pending - Madandola Estate CDA{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Registration Pending - Madandola Estate CDA{% endblock %} {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">Registration Pending</div>
             <div class="card-body">
-                <p>Thank you for registering! Your account is currently pending admin approval. You will be notified once your account has been approved.</p>
+                <p>Thank you for registering! Your account is currently pending admin approval. You will be notified via email once your account has been approved.</p>
                 <p>In the meantime, you can explore other parts of the website that do not require login.</p>
                 <a href="{% url 'home' %}" class="btn btn-primary">Go to Home</a>
             </div>

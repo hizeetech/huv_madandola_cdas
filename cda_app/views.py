@@ -5,15 +5,98 @@ from django.utils import timezone
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
-
+from django.contrib import messages
 from .models import (
     CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
     Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, 
     CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, 
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal
 )
-from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
-from django.contrib import messages
+""" from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm """
+from .forms import (
+    CustomUserCreationForm, CustomAuthenticationForm,
+    AdvertItemForm, AdvertImageFormSet, DonationProofForm
+)
+
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import user_passes_test
+from django.core.paginator import Paginator
+
+""" from .models import (
+    CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, 
+    Event, CommunityInfo, NavbarImage, PaidMember, Committee,
+    CommitteeMember, CommitteeToDo, CommitteeAchievement,
+    AdvertCategory, AdvertItem, AdvertImage, Artisan,
+    Professional, ProjectDonation, ProjectImage, DonationProof, Proposal
+) """
+
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+@login_required
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    return render(request, 'admin_portal/dashboard.html')
+
+@login_required
+@user_passes_test(is_admin)
+def admin_user_management(request):
+    users = User.objects.all().order_by('-date_joined')
+    search_query = request.GET.get('q', '')
+    
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    paginator = Paginator(users, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'admin_portal/user_management.html', {
+        'page_obj': page_obj,
+        'search_query': search_query
+    })
+
+@login_required
+@user_passes_test(is_admin)
+def admin_approve_user(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    profile = user.userprofile
+    profile.is_approved = True
+    profile.save()
+    user.is_active = True
+    user.save()
+    messages.success(request, f"User {user.username} has been approved.")
+    return redirect('admin_user_management')
+
+@login_required
+@user_passes_test(is_admin)
+def admin_advert_approval(request):
+    adverts = AdvertItem.objects.filter(is_approved=False).order_by('-published_date')
+    return render(request, 'admin_portal/advert_approval.html', {'adverts': adverts})
+
+@login_required
+@user_passes_test(is_admin)
+def admin_approve_advert(request, advert_id):
+    advert = get_object_or_404(AdvertItem, pk=advert_id)
+    advert.is_approved = True
+    advert.save()
+    messages.success(request, f"Advert '{advert.title}' has been approved.")
+    return redirect('admin_advert_approval')
+
+@login_required
+@user_passes_test(is_admin)
+def admin_reject_advert(request, advert_id):
+    advert = get_object_or_404(AdvertItem, pk=advert_id)
+    advert.delete()
+    messages.success(request, f"Advert '{advert.title}' has been rejected and deleted.")
+    return redirect('admin_advert_approval')
+
+# ... [keep all your existing views below this point] ...
 
 
 def home(request):
@@ -77,10 +160,19 @@ def user_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                next_url = request.POST.get('next', request.GET.get('next', ''))
+                if next_url:
+                    return redirect(next_url)
                 return redirect('home')
     else:
         form = CustomAuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+    
+    # Pass the 'next' parameter to the template
+    next_url = request.GET.get('next', '')
+    return render(request, 'login.html', {
+        'form': form,
+        'next': next_url
+    })
 
 @login_required
 def user_logout(request):
