@@ -1,8 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
 from .models import CustomUser, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
-
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -42,9 +41,46 @@ class CustomUserCreationForm(UserCreationForm):
 from django.contrib.auth.forms import UserChangeForm
 
 class CustomUserChangeForm(UserChangeForm):
+    password = None  # Remove the password field from the form
+    cda = forms.ModelChoiceField(
+        queryset=CDA.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
     class Meta:
         model = CustomUser
-        fields = ('first_name', 'last_name', 'email', 'phone_number', 'image')
+        fields = ('first_name', 'last_name', 'email', 'phone_number', 'user_type', 'cda', 'image')
+        widgets = {
+            'user_type': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.cda:
+            self.initial['cda'] = CDA.objects.filter(name=self.instance.cda).first()
+        self.fields['image'].widget.attrs.update({'class': 'form-control-file'})
+        self.fields['email'].widget.attrs.update({'class': 'form-control'})
+        self.fields['first_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['last_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['phone_number'].widget.attrs.update({'class': 'form-control'})
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.cleaned_data['cda']:
+            user.cda = self.cleaned_data['cda'].name
+        else:
+            user.cda = None
+        if commit:
+            user.save()
+        return user
+
+from django.contrib.auth.forms import PasswordChangeForm
+class CustomPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):

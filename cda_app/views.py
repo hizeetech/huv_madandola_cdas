@@ -1,6 +1,6 @@
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required, user_passes_test
-
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -202,35 +202,169 @@ def user_logout(request):
     logout(request)
     return redirect('home')
 
+# cda_app/views.py
+from datetime import datetime, timedelta
+from django.db.models import Sum
+from .models import RegularLevy
+
 @login_required
 def profile(request):
-    user = request.user  # This is your CustomUser instance
-    user_levies = UserLevy.objects.filter(user=user)
-    payments = Payment.objects.filter(user_levy__user=user)
-    outstanding_levies = UserLevy.objects.filter(user=user, is_paid=False)
+    # Regular Levies/Dues (current and recent)
+    regular_levies = RegularLevy.objects.filter(
+        user=request.user,
+        status__in=['unpaid', 'pending', 'rejected']
+    ).order_by('-year', '-month')
+    
+    # Payment History (paid levies)
+    payment_history = RegularLevy.objects.filter(
+        user=request.user,
+        status='paid'
+    ).order_by('-updated_at')
+    
+    # Outstanding Levies (grouped by payment_for)
+    three_months_ago = timezone.now() - timedelta(days=90)
+    outstanding = RegularLevy.objects.filter(
+        user=request.user,
+        status__in=['unpaid', 'pending', 'rejected'],
+        created_at__lte=three_months_ago
+    )
+    
+    outstanding_levies = {}
+    for category in dict(RegularLevy.PAYMENT_FOR_CHOICES).keys():
+        category_levies = outstanding.filter(payment_for=category)
+        if category_levies.exists():
+            total_amount = category_levies.aggregate(Sum('amount'))['amount__sum']
+            outstanding_levies[category] = {
+                'total_amount': total_amount,
+                'count': category_levies.count()
+            }
     
     return render(request, 'profile.html', {
-        'user': user,
-        'user_levies': user_levies,
-        'payments': payments,
+        'user': request.user,
+        'regular_levies': regular_levies,
+        'payment_history': payment_history,
         'outstanding_levies': outstanding_levies
     })
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from .models import RegularLevy
+from .utils import send_payment_proof_email
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def upload_payment_proof(request):
+    if not (request.POST.get('levy_id') or request.POST.get('category')):
+        return JsonResponse(
+            {'error': 'Either levy_id or category must be provided'},
+            status=400
+        )
+
+    levy_id = request.POST.get('levy_id')
+    category = request.POST.get('category')
+    proof_image = request.FILES.get('proof_image')
+
+    errors = {}
+    if not proof_image:
+        errors['proof_image'] = 'Please upload an image as proof.'
+    if not levy_id and not category:
+        errors['general'] = 'Either levy_id or category is required.'
+
+    if errors:
+        return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+    try:
+        if levy_id:
+            try:
+                levy = RegularLevy.objects.get(id=levy_id, user=request.user)
+            except RegularLevy.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Levy not found.'}, status=404)
+
+            if levy.status == 'paid':
+                return JsonResponse({'success': False, 'error': 'This levy is already marked as paid.'}, status=400)
+
+            levy.proof_of_payment = proof_image
+            levy.status = 'pending'
+            levy.updated_at = timezone.now()
+            levy.save()
+            send_payment_proof_email(levy, request.user)
+            return JsonResponse({'success': True, 'message': 'Proof submitted successfully and marked as pending.'})
+
+        elif category:
+            levies = RegularLevy.objects.filter(
+                user=request.user,
+                payment_for=category,
+                status__in=['unpaid', 'pending', 'rejected']
+            )
+            if not levies.exists():
+                return JsonResponse({'success': False, 'error': f'No unpaid or rejected levies under {category}.'}, status=400)
+
+            for levy in levies:
+                levy.proof_of_payment = proof_image
+                levy.status = 'pending'
+                levy.updated_at = timezone.now()
+                levy.save()
+                send_payment_proof_email(levy, request.user)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Proof uploaded for {levies.count()} levy(ies) under {category}.'
+            })
+
+    except Exception as e:
+        logger.exception("Error while uploading payment proof:")
+        return JsonResponse({'success': False, 'error': 'An unexpected error occurred. Please try again.'}, status=500)
+
+
+def send_payment_proof_email(levy, user):
+    subject = 'Payment Proof Uploaded'
+    html_message = render_to_string('emails/payment_proof_uploaded.html', {
+        'levy': levy,
+        'user': user
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        html_message=html_message,
+    )
     
     
 from .forms import CustomUserChangeForm  # Make sure to import the form
 
+# cda_app/views.py
+from .forms import CustomUserChangeForm, CustomPasswordChangeForm
+
 @login_required
 def edit_profile(request):
     if request.method == 'POST':
-        form = CustomUserChangeForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your profile was successfully updated!')
-            return redirect('profile')
+        if 'change_password' in request.POST:
+            password_form = CustomPasswordChangeForm(request.user, request.POST)
+            profile_form = CustomUserChangeForm(instance=request.user)
+            if password_form.is_valid():
+                password_form.save()
+                messages.success(request, 'Your password was successfully updated!')
+                return redirect('profile')
+        else:
+            profile_form = CustomUserChangeForm(request.POST, request.FILES, instance=request.user)
+            password_form = CustomPasswordChangeForm(request.user)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Your profile was successfully updated!')
+                return redirect('profile')
     else:
-        form = CustomUserChangeForm(instance=request.user)
+        profile_form = CustomUserChangeForm(instance=request.user)
+        password_form = CustomPasswordChangeForm(request.user)
     
-    return render(request, 'edit_profile.html', {'form': form})
+    return render(request, 'edit_profile.html', {
+        'profile_form': profile_form,
+        'password_form': password_form
+    })
 
 def events(request):
     all_events = Event.objects.all().order_by('date')

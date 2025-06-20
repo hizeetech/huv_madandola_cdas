@@ -333,3 +333,186 @@ class Professional(models.Model):
 
     def __str__(self):
         return self.name
+
+# cda_app/models.py
+from django.db import models
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+class RegularLevy(models.Model):
+    MONTH_CHOICES = [
+        ('January', _('January')),
+        ('February', _('February')),
+        ('March', _('March')),
+        ('April', _('April')),
+        ('May', _('May')),
+        ('June', _('June')),
+        ('July', _('July')),
+        ('August', _('August')),
+        ('September', _('September')),
+        ('October', _('October')),
+        ('November', _('November')),
+        ('December', _('December')),
+    ]
+    
+    PAYMENT_FOR_CHOICES = [
+        ('Electricity', _('Electricity')),
+        ('Security', _('Security')),
+        ('Development Levies', _('Development Levies')),
+        ('Sanitations', _('Sanitations')),
+        ('Others', _('Others')),
+    ]
+    
+    STATUS_CHOICES = [
+        ('unpaid', _('Unpaid')),
+        ('pending', _('Pending')),
+        ('paid', _('Paid')),
+        ('rejected', _('Rejected')),
+    ]
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name=_('User'),
+        related_name='levies'
+    )
+    
+    month = models.CharField(
+        _('Month'),
+        max_length=20,
+        choices=MONTH_CHOICES,
+        help_text=_('Select the month for this levy')
+    )
+    
+    year = models.PositiveIntegerField(
+        _('Year'),
+        help_text=_('Enter the year for this levy')
+    )
+    
+    payment_for = models.CharField(
+        _('Payment For'),
+        max_length=50,
+        choices=PAYMENT_FOR_CHOICES,
+        help_text=_('Select the purpose of this payment')
+    )
+    
+    amount = models.DecimalField(
+        _('Amount'),
+        max_digits=10,
+        decimal_places=2,
+        help_text=_('Enter the amount to be paid')
+    )
+    
+    cda = models.CharField(
+        _('CDA'),
+        max_length=100,
+        help_text=_('Community Development Association')
+    )
+    
+    status = models.CharField(
+        _('Status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='unpaid',
+        help_text=_('Current payment status')
+    )
+    
+    proof_of_payment = models.ImageField(
+        _('Proof of Payment'),
+        upload_to='payment_proofs/',
+        null=True,
+        blank=True,
+        help_text=_('Upload proof of payment'),
+        validators=[
+            # Add file validators if needed (size, extension)
+        ]
+    )
+    
+    created_at = models.DateTimeField(
+        _('Created At'),
+        default=timezone.now,
+        editable=False
+    )
+    
+    updated_at = models.DateTimeField(
+        _('Updated At'),
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = _('Regular Levy')
+        verbose_name_plural = _('Regular Levies')
+        ordering = ['-year', '-month']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'month', 'year', 'payment_for'],
+                name='unique_user_levy_per_month'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.get_month_display()} {self.year} - {self.get_payment_for_display()} ({self.user.username})"
+
+    def clean(self):
+        """Validate model fields before saving"""
+        errors = {}
+        
+        # Validate year is reasonable (2000-current year + 1)
+        current_year = timezone.now().year
+        if self.year < 2000 or self.year > current_year + 1:
+            errors['year'] = _('Year must be between 2000 and %(current)s') % {'current': current_year + 1}
+        
+        # Validate amount is positive
+        if self.amount <= 0:
+            errors['amount'] = _('Amount must be positive')
+        
+        # Validate payment proof when status is pending/paid
+        if self.status in ['pending', 'paid'] and not self.proof_of_payment:
+            errors['proof_of_payment'] = _('Proof of payment is required for this status')
+        
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        """Custom save method with validation and auto-fields"""
+        # Auto-fill CDA if not provided
+        if not self.cda and hasattr(self.user, 'cda'):
+            self.cda = self.user.cda
+        
+        # Run full validation before saving
+        self.full_clean()
+        
+        # Set timestamps
+        if not self.id:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        
+        super().save(*args, **kwargs)
+
+    def get_status_color(self):
+        """Helper method to get status color for UI"""
+        status_colors = {
+            'unpaid': 'danger',
+            'pending': 'warning',
+            'paid': 'success',
+            'rejected': 'secondary'
+        }
+        return status_colors.get(self.status, 'info')
+
+    @property
+    def is_overdue(self):
+        """Check if the levy is overdue (unpaid and past current month)"""
+        if self.status != 'unpaid':
+            return False
+            
+        current_date = timezone.now()
+        current_month = current_date.month
+        current_year = current_date.year
+        
+        # Get month number from month name
+        month_number = list(dict(self.MONTH_CHOICES).keys()).index(self.month) + 1
+        
+        return (self.year < current_year) or \
+                (self.year == current_year and month_number < current_month)

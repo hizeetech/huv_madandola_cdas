@@ -72,3 +72,49 @@ def send_donation_proof_email(donation_proof):
         [settings.DEFAULT_FROM_EMAIL],  # Send to admin
         html_message=html_message,
     )
+    
+    
+# cda_app/utils.py
+
+def send_payment_proof_email(levy, user):
+    subject = 'Payment Proof Uploaded'
+    html_message = render_to_string('emails/payment_proof_uploaded.html', {
+        'levy': levy,
+        'user': user
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        html_message=html_message,
+    )
+
+def send_payment_approved_email(levy):
+    subject = 'Payment Approved'
+    html_message = render_to_string('emails/payment_approved.html', {
+        'levy': levy
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [levy.user.email],
+        html_message=html_message,
+    )
+
+def send_payment_rejected_email(levy):
+    subject = 'Payment Rejected'
+    html_message = render_to_string('emails/payment_rejected.html', {
+        'levy': levy
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [levy.user.email],
+        html_message=html_message,
+    )

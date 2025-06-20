@@ -8,7 +8,7 @@ from .models import (
     Event, CommunityInfo, Defaulter, NavbarImage, PaidMember,
     Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement,
     AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional,
-    ProjectDonation, ProjectImage, DonationProof, CustomUser
+    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy
 )
 
 # Unregister default User model if registered
@@ -54,7 +54,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 @admin.register(ExecutiveMember)
 class ExecutiveMemberAdmin(admin.ModelAdmin):
     list_display = ('name', 'position', 'start_date', 'end_date', 
-                   'phone_number', 'image')
+                    'phone_number', 'image')
     list_filter = ('position', 'start_date', 'end_date')
     search_fields = ('name', 'position')
 
@@ -67,14 +67,14 @@ class EventAdmin(admin.ModelAdmin):
 @admin.register(Defaulter)
 class DefaulterAdmin(admin.ModelAdmin):
     list_display = ('name', 'cda', 'amount_indebted', 'title_defaulted', 
-                   'status', 'image')
+                    'status', 'image')
     search_fields = ('name', 'cda', 'title_defaulted')
     list_filter = ('cda', 'status', 'title_defaulted')
 
 @admin.register(PaidMember)
 class PaidMemberAdmin(admin.ModelAdmin):
     list_display = ('name', 'cda', 'amount_paid', 'purpose_of_payment', 
-                   'payment_date', 'image')
+                    'payment_date', 'image')
     search_fields = ('name', 'cda', 'purpose_of_payment')
     list_filter = ('cda', 'purpose_of_payment', 'payment_date')
 
@@ -85,7 +85,7 @@ class AdvertImageInline(admin.TabularInline):
 @admin.register(AdvertItem)
 class AdvertItemAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'user', 'is_approved', 
-                   'published_date', 'display_main_image')
+                    'published_date', 'display_main_image')
     list_filter = ('is_approved', 'category', 'published_date')
     search_fields = ('title', 'description', 'user__username')
     inlines = [AdvertImageInline]
@@ -94,7 +94,7 @@ class AdvertItemAdmin(admin.ModelAdmin):
         first_image = obj.images.first()
         if first_image and first_image.image:
             return format_html('<img src="{}" width="50" height="50" />', 
-                             first_image.image.url)
+                            first_image.image.url)
         return "No Image"
     display_main_image.short_description = "Main Image"
 
@@ -109,7 +109,7 @@ class DonationProofInline(admin.TabularInline):
 @admin.register(ProjectDonation)
 class ProjectDonationAdmin(admin.ModelAdmin):
     list_display = ('title', 'estimated_cost', 'bank_name', 
-                   'account_number', 'beneficiary', 'reference_number')
+                    'account_number', 'beneficiary', 'reference_number')
     search_fields = ('title', 'bank_name', 'beneficiary')
     inlines = [ProjectImageInline, DonationProofInline]
 
@@ -121,7 +121,7 @@ class ArtisanAdmin(admin.ModelAdmin):
     def display_image(self, obj):
         if obj.image:
             return format_html('<img src="{}" width="50" height="50" />', 
-                             obj.image.url)
+                            obj.image.url)
         return "No Image"
     display_image.short_description = "Image"
 
@@ -133,9 +133,32 @@ class ProfessionalAdmin(admin.ModelAdmin):
     def display_image(self, obj):
         if obj.image:
             return format_html('<img src="{}" width="50" height="50" />', 
-                             obj.image.url)
+                            obj.image.url)
         return "No Image"
     display_image.short_description = "Image"
+    
+    
+# cda_app/admin.py
+@admin.register(RegularLevy)
+class RegularLevyAdmin(admin.ModelAdmin):
+    list_display = ('user', 'month', 'year', 'payment_for', 'amount', 'status', 'created_at')
+    list_filter = ('status', 'payment_for', 'month', 'year', 'cda')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    actions = ['approve_payments', 'reject_payments']
+    
+    def approve_payments(self, request, queryset):
+        updated = queryset.filter(status='pending').update(status='paid')
+        for levy in queryset.filter(status='paid'):
+            send_payment_approved_email(levy)
+        self.message_user(request, f"{updated} payments approved.")
+    approve_payments.short_description = "Approve selected payments"
+    
+    def reject_payments(self, request, queryset):
+        updated = queryset.filter(status='pending').update(status='rejected', proof_of_payment=None)
+        for levy in queryset.filter(status='rejected'):
+            send_payment_rejected_email(levy)
+        self.message_user(request, f"{updated} payments rejected.")
+    reject_payments.short_description = "Reject selected payments"
 
 # Simple model registrations
 admin.site.register(CDA)
