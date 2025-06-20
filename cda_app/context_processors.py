@@ -4,7 +4,12 @@ def committees(request):
     return {'committees': Committee.objects.all()} """
     
     
-from .models import Committee, User, AdvertItem
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+from .models import Committee, AdvertItem  # Adjust this as needed
+
+
 from django.db.models import Q
 
 def committees(request):

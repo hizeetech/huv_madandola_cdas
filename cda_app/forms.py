@@ -1,41 +1,58 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
 from django.forms import inlineformset_factory
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from .models import CustomUser, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
 
-from django import forms
 
 class CustomUserCreationForm(UserCreationForm):
-    cda = forms.ModelChoiceField(queryset=CDA.objects.all(), required=True, widget=forms.Select(attrs={'class': 'form-control'}))
-    image = forms.ImageField(required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control-file'}))
-
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    phone_number = forms.CharField(max_length=20, required=True)
+    user_type = forms.ChoiceField(
+        choices=CustomUser.USER_TYPE_CHOICES,
+        widget=forms.RadioSelect,
+        required=True
+    )
+    cda = forms.ModelChoiceField(
+        queryset=CDA.objects.all(),
+        required=False,
+        empty_label="Select CDA",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
     class Meta(UserCreationForm.Meta):
-        fields = UserCreationForm.Meta.fields + ('email', 'cda', 'image')
-
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 
+                'phone_number', 'user_type', 'cda', 'image',
+                'password1', 'password2')
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['cda'].widget.attrs.update({'class': 'form-control'})
         self.fields['image'].widget.attrs.update({'class': 'form-control-file'})
-        for field_name in self.fields:
-            if field_name not in ['cda', 'image']:
-                self.fields[field_name].widget.attrs.update({'class': 'form-control'})
-
+    
     def save(self, commit=True):
-        user = super().save(commit=True) # Ensure user is saved
-        user_profile, created = UserProfile.objects.get_or_create(user=user)
-
-        if self.cleaned_data['cda']:
-            user_profile.cda = self.cleaned_data['cda']
-        if self.cleaned_data['image']:
-            user_profile.image = self.cleaned_data['image']
-        user_profile.save()
+        user = super().save(commit=False)
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        
+        if commit:
+            user.save()
         return user
+    
+from django.contrib.auth.forms import UserChangeForm
+
+class CustomUserChangeForm(UserChangeForm):
+    class Meta:
+        model = CustomUser
+        fields = ('first_name', 'last_name', 'email', 'phone_number', 'image')
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name in self.fields:
             self.fields[field_name].widget.attrs.update({'class': 'form-control'})
+
+# [Keep your other form classes as they are]
 
 class AdvertItemForm(forms.ModelForm):
     class Meta:

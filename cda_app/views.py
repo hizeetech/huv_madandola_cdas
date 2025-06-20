@@ -1,3 +1,6 @@
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -7,18 +10,28 @@ from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
 from django.contrib import messages
 from .models import (
-    CDA, UserProfile, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
+    CDA, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
     Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, 
     CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, 
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal
 )
+
+from django.contrib.auth import get_user_model
+from .models import CustomUser
 """ from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm """
 from .forms import (
     CustomUserCreationForm, CustomAuthenticationForm,
     AdvertItemForm, AdvertImageFormSet, DonationProofForm
 )
 
-from django.contrib.auth.models import User
+from .utils import (
+    send_registration_email, 
+    send_approval_email,
+    send_advert_created_email,
+    send_advert_approved_email,
+    send_donation_proof_email
+)
+from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 
@@ -41,6 +54,7 @@ def admin_dashboard(request):
 @login_required
 @user_passes_test(is_admin)
 def admin_user_management(request):
+    User = get_user_model()  # This will get your custom user model
     users = User.objects.all().order_by('-date_joined')
     search_query = request.GET.get('q', '')
     
@@ -49,8 +63,7 @@ def admin_user_management(request):
             Q(username__icontains=search_query) |
             Q(email__icontains=search_query) |
             Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query)
-        )
+            Q(last_name__icontains=search_query))
     
     paginator = Paginator(users, 25)
     page_number = request.GET.get('page')
@@ -64,12 +77,12 @@ def admin_user_management(request):
 @login_required
 @user_passes_test(is_admin)
 def admin_approve_user(request, user_id):
+    User = get_user_model()
     user = get_object_or_404(User, pk=user_id)
-    profile = user.userprofile
-    profile.is_approved = True
-    profile.save()
+    user.is_approved = True
     user.is_active = True
     user.save()
+    send_approval_email(user)
     messages.success(request, f"User {user.username} has been approved.")
     return redirect('admin_user_management')
 
@@ -85,6 +98,7 @@ def admin_approve_advert(request, advert_id):
     advert = get_object_or_404(AdvertItem, pk=advert_id)
     advert.is_approved = True
     advert.save()
+    send_advert_approved_email(advert)
     messages.success(request, f"Advert '{advert.title}' has been approved.")
     return redirect('admin_advert_approval')
 
@@ -140,16 +154,25 @@ def home(request):
 
 def register(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST, request.FILES)  # Added request.FILES for image upload
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False  # Deactivate user until approved
-            user.save()
-            UserProfile.objects.create(user=user, is_approved=False)
-            return render(request, 'registration_pending.html') # Redirect to a pending approval page
+            user.save()            
+            # Send registration confirmation email
+            send_registration_email(user)            
+            # Show success message
+            messages.success(request, 'Your registration was successful! Please check your email for confirmation and wait for admin approval.')            
+            return redirect('registration_pending')  # Redirect to pending approval page
+            
     else:
         form = CustomUserCreationForm()
+    
     return render(request, 'registration.html', {'form': form})
+
+
+def registration_pending(request):
+    return render(request, 'registration_pending.html')
 
 def user_login(request):
     if request.method == 'POST':
@@ -181,11 +204,33 @@ def user_logout(request):
 
 @login_required
 def profile(request):
-    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-    user_levies = UserLevy.objects.filter(user=request.user)
-    payments = Payment.objects.filter(user_levy__user=request.user)
-    outstanding_levies = UserLevy.objects.filter(user=request.user, is_paid=False)
-    return render(request, 'profile.html', {'user_profile': user_profile, 'user_levies': user_levies, 'payments': payments, 'outstanding_levies': outstanding_levies})
+    user = request.user  # This is your CustomUser instance
+    user_levies = UserLevy.objects.filter(user=user)
+    payments = Payment.objects.filter(user_levy__user=user)
+    outstanding_levies = UserLevy.objects.filter(user=user, is_paid=False)
+    
+    return render(request, 'profile.html', {
+        'user': user,
+        'user_levies': user_levies,
+        'payments': payments,
+        'outstanding_levies': outstanding_levies
+    })
+    
+    
+from .forms import CustomUserChangeForm  # Make sure to import the form
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile was successfully updated!')
+            return redirect('profile')
+    else:
+        form = CustomUserChangeForm(instance=request.user)
+    
+    return render(request, 'edit_profile.html', {'form': form})
 
 def events(request):
     all_events = Event.objects.all().order_by('date')
@@ -291,6 +336,7 @@ def create_advert(request):
                     is_main = image_data.get('is_main', False)
                     if image:
                         AdvertImage.objects.create(advert_item=advert_item, image=image, is_main=is_main)
+            send_advert_created_email(advert_item)
             return redirect('advert_detail', pk=advert_item.pk)
     else:
         form = AdvertItemForm()
@@ -337,6 +383,7 @@ def upload_donation_proof(request, donation_id):
             donation_proof = form.save(commit=False)
             donation_proof.project_donation = project_donation
             donation_proof.save()
+            send_donation_proof_email(donation_proof)
             return redirect('project_donations_list')  # Redirect to the donations list after successful upload
     else:
         form = DonationProofForm(initial={'donation_reference_number': project_donation.reference_number})

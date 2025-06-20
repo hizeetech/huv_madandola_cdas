@@ -1,48 +1,88 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block title %}My Profile{% endblock %} {% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Profile Information</h4>
+                </div>
+                <div class="card-body">
+                    {% if user.image %}
+                    <img src="{{ user.image.url }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px;"> {% endif %}
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    <p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Phone:</strong> {{ user.phone_number }}</p>
+                    <p><strong>User Type:</strong> {{ user.get_user_type_display }}</p>
+                    <p><strong>CDA:</strong> {{ user.cda }}</p>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
 
-{% block title %}Profile - Madandola Estate CDA{% endblock %}
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Payment History</h4>
+                </div>
+                <div class="card-body">
+                    {% if payments %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Levy Type</th>
+                                <th>Amount Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.payment_date|date:"Y-m-d" }}</td>
+                                <td>{{ payment.user_levy.levy.levy_type }}</td>
+                                <td>{{ payment.amount_paid }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No payment history found.</p>
+                    {% endif %}
+                </div>
+            </div>
 
-{% block content %}
-<h1 class="mb-4">User Profile</h1>
-
-<div class="card">
-    <div class="card-header">Welcome, {{ user.username }}!</div>
-    <div class="card-body">
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>CDA:</strong> {{ user.profile.cda.name }}</p>
-
-        <h3 class="mt-4">Payment History</h3>
-        {% if payments %}
-            <ul class="list-group">
-                {% for payment in payments %}
-                    <li class="list-group-item">
-                        <strong>{{ payment.payment_type }}</strong> - Amount: {{ payment.amount }} - Date: {{ payment.date }}
-                        {% if payment.notes %}<br><small>Notes: {{ payment.notes }}</small>{% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No payment history found.</p>
-        {% endif %}
-
-        <h3 class="mt-4">Outstanding Levies</h3>
-        {% if outstanding_levies %}
-            <ul class="list-group">
-                {% for levy in outstanding_levies %}
-                    <li class="list-group-item">
-                        <strong>{{ levy.levy_type }}</strong> - Amount Due: {{ levy.amount_due }}
-                        <form method="post" action="{% url 'pay_levy' levy.id %}" class="d-inline ml-3">
-                            {% csrf_token %}
-                            <input type="text" name="notes" placeholder="Purpose of payment" class="form-control form-control-sm d-inline w-auto">
-                            <button type="submit" class="btn btn-success btn-sm">Pay Now</button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No outstanding levies.</p>
-        {% endif %}
-
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>Outstanding Levies</h4>
+                </div>
+                <div class="card-body">
+                    {% if outstanding_levies %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Levy Type</th>
+                                <th>Amount Due</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for levy in outstanding_levies %}
+                            <tr>
+                                <td>{{ levy.levy.levy_type }}</td>
+                                <td>{{ levy.amount_due }}</td>
+                                <td>
+                                    <a href="{% url 'pay_levy' levy.id %}" class="btn btn-sm btn-success">Pay Now</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No outstanding levies. Good job!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

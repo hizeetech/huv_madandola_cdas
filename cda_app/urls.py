@@ -44,6 +44,8 @@ urlpatterns = [
     # Existing URLs
     path('', views.home, name='home'),
     path('register/', views.register, name='registration'),
+    path('register/pending/', views.registration_pending, name='registration_pending'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('profile/', views.profile, name='profile'),
     path('events/', views.events, name='events'),
     path('events/<int:event_id>/', views.event_detail, name='event_detail'),

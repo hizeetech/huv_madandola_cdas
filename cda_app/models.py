@@ -1,5 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
+
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
 
 
@@ -8,15 +10,50 @@ class CDA(models.Model):
 
     def __str__(self):
         return self.name
+    
+    
+
+""" from django.db import models
+from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
+    USER_TYPE_CHOICES = [
+        ('landlord', 'Landlord'),
+        ('tenant', 'Tenant'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     cda = models.ForeignKey(CDA, on_delete=models.SET_NULL, null=True, blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     is_approved = models.BooleanField(default=False)
-
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='tenant')
+    
     def __str__(self):
-        return self.user.username
+        return self.user.username """
+    
+
+class CustomUser(AbstractUser):
+    USER_TYPE_CHOICES = [
+        ('landlord', 'Landlord'),
+        ('tenant', 'Tenant'),
+    ]
+    
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='tenant')
+    cda = models.CharField(max_length=100, blank=True, null=True)
+    image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    is_approved = models.BooleanField(default=False)  # Add this field
+
+    objects = UserManager()
+    
+    def __str__(self):
+        return self.username
+    
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
 
 class Levy(models.Model):
     CDA_CHOICES = [
@@ -40,7 +77,7 @@ class Levy(models.Model):
         return f"{self.levy_type} - {self.amount}"
 
 class UserLevy(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     levy = models.ForeignKey(Levy, on_delete=models.CASCADE)
     amount_due = models.DecimalField(max_digits=10, decimal_places=2)
     is_paid = models.BooleanField(default=False)
@@ -236,7 +273,7 @@ class AdvertItem(models.Model):
         ('For Lease', 'For Lease'),
     ]
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
