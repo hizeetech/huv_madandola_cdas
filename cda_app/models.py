@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
 
@@ -425,21 +425,11 @@ class RegularLevy(models.Model):
         null=True,
         blank=True,
         help_text=_('Upload proof of payment'),
-        validators=[
-            # Add file validators if needed (size, extension)
-        ]
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])]
     )
     
-    created_at = models.DateTimeField(
-        _('Created At'),
-        default=timezone.now,
-        editable=False
-    )
-    
-    updated_at = models.DateTimeField(
-        _('Updated At'),
-        auto_now=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = _('Regular Levy')

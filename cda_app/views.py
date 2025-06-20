@@ -257,67 +257,73 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def upload_payment_proof(request):
-    if not (request.POST.get('levy_id') or request.POST.get('category')):
-        return JsonResponse(
-            {'error': 'Either levy_id or category must be provided'},
-            status=400
-        )
-
-    levy_id = request.POST.get('levy_id')
-    category = request.POST.get('category')
-    proof_image = request.FILES.get('proof_image')
-
-    errors = {}
-    if not proof_image:
-        errors['proof_image'] = 'Please upload an image as proof.'
-    if not levy_id and not category:
-        errors['general'] = 'Either levy_id or category is required.'
-
-    if errors:
-        return JsonResponse({'success': False, 'errors': errors}, status=400)
-
-    try:
-        if levy_id:
-            try:
-                levy = RegularLevy.objects.get(id=levy_id, user=request.user)
-            except RegularLevy.DoesNotExist:
-                return JsonResponse({'success': False, 'error': 'Levy not found.'}, status=404)
-
-            if levy.status == 'paid':
-                return JsonResponse({'success': False, 'error': 'This levy is already marked as paid.'}, status=400)
-
-            levy.proof_of_payment = proof_image
-            levy.status = 'pending'
-            levy.updated_at = timezone.now()
-            levy.save()
-            send_payment_proof_email(levy, request.user)
-            return JsonResponse({'success': True, 'message': 'Proof submitted successfully and marked as pending.'})
-
-        elif category:
-            levies = RegularLevy.objects.filter(
-                user=request.user,
-                payment_for=category,
-                status__in=['unpaid', 'pending', 'rejected']
-            )
-            if not levies.exists():
-                return JsonResponse({'success': False, 'error': f'No unpaid or rejected levies under {category}.'}, status=400)
-
-            for levy in levies:
-                levy.proof_of_payment = proof_image
+    if request.method == 'POST' and request.FILES.get('proof_image'):
+        try:
+            # Validate file size
+            if request.FILES['proof_image'].size > settings.MAX_UPLOAD_SIZE:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'File size must be less than 5MB'
+                }, status=400)
+                
+            levy_id = request.POST.get('levy_id')
+            category = request.POST.get('category')
+            
+            if levy_id:
+                # Handle single levy payment
+                levy = get_object_or_404(RegularLevy, id=levy_id, user=request.user)
+                levy.proof_of_payment = request.FILES['proof_image']
                 levy.status = 'pending'
-                levy.updated_at = timezone.now()
                 levy.save()
+                
                 send_payment_proof_email(levy, request.user)
-
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Payment proof submitted! Status updated to Pending.',
+                    'new_status': 'pending',
+                    'levy_id': levy.id
+                })
+                
+            elif category:
+                # Handle category payment
+                levies = RegularLevy.objects.filter(
+                    user=request.user,
+                    payment_for=category,
+                    status__in=['unpaid', 'pending', 'rejected']
+                )
+                
+                if not levies.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'No unpaid levies found for {category}'
+                    }, status=400)
+                
+                updated_count = 0
+                for levy in levies:
+                    levy.proof_of_payment = request.FILES['proof_image']
+                    levy.status = 'pending'
+                    levy.save()
+                    updated_count += 1
+                    send_payment_proof_email(levy, request.user)
+                    
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Payment proof uploaded for {updated_count} items!',
+                    'new_status': 'pending',
+                    'category': category
+                })
+                
+        except Exception as e:
+            logger.error(f"Error uploading payment proof: {str(e)}")
             return JsonResponse({
-                'success': True,
-                'message': f'Proof uploaded for {levies.count()} levy(ies) under {category}.'
-            })
+                'success': False,
+                'error': 'An error occurred while processing your payment'
+            }, status=500)
 
-    except Exception as e:
-        logger.exception("Error while uploading payment proof:")
-        return JsonResponse({'success': False, 'error': 'An unexpected error occurred. Please try again.'}, status=500)
-
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method or missing proof image'
+    }, status=400)
 
 def send_payment_proof_email(levy, user):
     subject = 'Payment Proof Uploaded'

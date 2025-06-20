@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-
+""" from import_export.admin import ExportActionMixin """
 from django.utils.html import format_html
 
 from .models import (
@@ -136,15 +136,47 @@ class ProfessionalAdmin(admin.ModelAdmin):
                             obj.image.url)
         return "No Image"
     display_image.short_description = "Image"
-    
-    
+
 # cda_app/admin.py
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import RegularLevy
+from .utils import send_payment_approved_email, send_payment_rejected_email
+
 @admin.register(RegularLevy)
 class RegularLevyAdmin(admin.ModelAdmin):
-    list_display = ('user', 'month', 'year', 'payment_for', 'amount', 'status', 'created_at')
+    list_display = ('user', 'month', 'year', 'payment_for', 'amount', 'status', 'colored_status', 'proof_of_payment_link', 'created_at')
     list_filter = ('status', 'payment_for', 'month', 'year', 'cda')
     search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    readonly_fields = ('proof_of_payment_preview', 'created_at', 'updated_at', 'colored_status')
+    list_editable = ('status',)
     actions = ['approve_payments', 'reject_payments']
+    
+    def colored_status(self, obj):
+        colors = {
+            'unpaid': 'red',
+            'pending': 'orange',
+            'paid': 'green',
+            'rejected': 'gray'
+        }
+        return format_html(
+            '<span style="color: {};">{}</span>',
+            colors.get(obj.status, 'black'),
+            obj.get_status_display()
+        )
+    colored_status.short_description = 'Status Display'
+    
+    def proof_of_payment_link(self, obj):
+        if obj.proof_of_payment:
+            return format_html('<a href="{}" target="_blank">View Proof</a>', obj.proof_of_payment.url)
+        return "No Proof"
+    proof_of_payment_link.short_description = "Proof"
+    
+    def proof_of_payment_preview(self, obj):
+        if obj.proof_of_payment:
+            return format_html('<img src="{}" style="max-height: 200px;" />', obj.proof_of_payment.url)
+        return "No Proof"
+    proof_of_payment_preview.short_description = "Proof Preview"
     
     def approve_payments(self, request, queryset):
         updated = queryset.filter(status='pending').update(status='paid')
@@ -159,6 +191,30 @@ class RegularLevyAdmin(admin.ModelAdmin):
             send_payment_rejected_email(levy)
         self.message_user(request, f"{updated} payments rejected.")
     reject_payments.short_description = "Reject selected payments"
+    
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'month', 'year', 'payment_for', 'amount', 'cda', 'status')
+        }),
+        ('Proof of Payment', {
+            'fields': ('proof_of_payment', 'proof_of_payment_preview')
+        }),
+        ('Dates (Read Only)', {
+            'fields': ('created_at', 'updated_at', 'colored_status'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        # Only process if proof_of_payment was uploaded
+        if 'proof_of_payment' in form.changed_data and obj.proof_of_payment:
+            obj.status = 'pending'  # Automatically set status to pending when proof is uploaded
+        super().save_model(request, obj, form, change)
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.status == 'paid':
+            return [f.name for f in self.model._meta.fields] + ['proof_of_payment_preview', 'colored_status']
+        return super().get_readonly_fields(request, obj)
 
 # Simple model registrations
 admin.site.register(CDA)

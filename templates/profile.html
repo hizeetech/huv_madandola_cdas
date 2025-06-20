@@ -191,11 +191,11 @@
                 <h5 class="modal-title" id="paymentModalLabel">Upload Proof of Payment</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="paymentForm" method="post" enctype="multipart/form-data" action="{% url 'upload_payment_proof' %}">
+            <form id="paymentForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <input type="hidden" id="levyId" name="levy_id">
-                    <input type="hidden" id="category" name="category">
+                    <input type="hidden" id="levyId" name="levy_id" value="">
+                    <input type="hidden" id="category" name="category" value="">
                     <div class="mb-3">
                         <label for="proofImage" class="form-label">Payment Proof (Image)</label>
                         <input class="form-control" type="file" id="proofImage" name="proof_image" required accept="image/jpeg, image/png">
@@ -231,72 +231,96 @@
 {% endblock %} {% block scripts %}
 <script>
     $(document).ready(function() {
-        // Helper function to get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-        // Store the current levy/category when pay button is clicked
-        var currentPaymentData = {};
+        // Store the current payment context
+        var currentPaymentContext = {};
 
         $('.pay-now-btn').click(function() {
-            // Store the payment context
-            currentPaymentData = {
-                levy_id: $(this).data('levy-id'),
-                category: $(this).data('category')
-            };
+            // Clear previous context
+            currentPaymentContext = {};
 
-            // Reset file input
-            $('#proofImage').val('');
+            // Set the new context based on what's available
+            if ($(this).data('levy-id')) {
+                currentPaymentContext.levy_id = $(this).data('levy-id');
+                $('#levyId').val(currentPaymentContext.levy_id);
+                $('#category').val('');
+            } else if ($(this).data('category')) {
+                currentPaymentContext.category = $(this).data('category');
+                $('#category').val(currentPaymentContext.category);
+                $('#levyId').val('');
+            }
         });
 
         $('#paymentForm').submit(function(e) {
             e.preventDefault();
 
-            // Validate file first
+            // Clear previous feedback
+            $('#feedbackMessage').empty();
+
+            // Validate file
             const fileInput = document.getElementById('proofImage');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please select a payment proof image');
+            if (!fileInput.files.length) {
+                $('#feedbackMessage').html('<div class="alert alert-danger">Please select a payment proof file</div>');
+                $('#feedbackModal').modal('show');
                 return;
             }
 
-            // Create FormData and append ALL required fields
+            if (fileInput.files[0].size > 5 * 1024 * 1024) { // 5MB
+                $('#feedbackMessage').html('<div class="alert alert-danger">File size must be less than 5MB</div>');
+                $('#feedbackModal').modal('show');
+                return;
+            }
+
+            // Create FormData
             const formData = new FormData();
             formData.append('proof_image', fileInput.files[0]);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-            // Add either levy_id or category based on what was stored
-            if (currentPaymentData.levy_id) {
-                formData.append('levy_id', currentPaymentData.levy_id);
-            } else if (currentPaymentData.category) {
-                formData.append('category', currentPaymentData.category);
+            // Add either levy_id or category
+            if (currentPaymentContext.levy_id) {
+                formData.append('levy_id', currentPaymentContext.levy_id);
+            } else if (currentPaymentContext.category) {
+                formData.append('category', currentPaymentContext.category);
             } else {
-                alert('Payment context missing. Please try again.');
+                $('#feedbackMessage').html('<div class="alert alert-danger">Payment context missing. Please try again.</div>');
+                $('#feedbackModal').modal('show');
                 return;
             }
 
+            // Show loading state
+            $('#paymentModal').find('button[type="submit"]').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+
             // Submit the form
             $.ajax({
-                url: $(this).attr('action'),
+                url: "{% url 'upload_payment_proof' %}",
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
                 success: function(response) {
                     $('#paymentModal').modal('hide');
-                    alert(response.message || 'Payment proof uploaded successfully!');
-                    setTimeout(() => location.reload(), 1000);
+                    if (response.success) {
+                        // Update UI without reloading
+                        if (response.levy_id) {
+                            // Update single row
+                            $(`button[data-levy-id="${response.levy_id}"]`)
+                                .removeClass('btn-primary')
+                                .addClass('btn-warning')
+                                .html('Pending')
+                                .prop('disabled', true);
+                        } else if (response.category) {
+                            // Update all rows for this category
+                            $(`button[data-category="${response.category}"]`)
+                                .removeClass('btn-primary')
+                                .addClass('btn-warning')
+                                .html('Pending')
+                                .prop('disabled', true);
+                        }
+
+                        $('#feedbackMessage').html('<div class="alert alert-success">' + response.message + '</div>');
+                    } else {
+                        $('#feedbackMessage').html('<div class="alert alert-danger">' + (response.error || 'An error occurred') + '</div>');
+                    }
+                    $('#feedbackModal').modal('show');
                 },
                 error: function(xhr) {
                     let errorMsg = 'An error occurred';
@@ -306,7 +330,11 @@
                     } catch (e) {
                         errorMsg = xhr.statusText;
                     }
-                    alert(errorMsg);
+                    $('#feedbackMessage').html('<div class="alert alert-danger">' + errorMsg + '</div>');
+                    $('#feedbackModal').modal('show');
+                },
+                complete: function() {
+                    $('#paymentModal').find('button[type="submit"]').prop('disabled', false).html('Submit Proof');
                 }
             });
         });
