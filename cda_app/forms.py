@@ -136,3 +136,21 @@ class DonationProofForm(forms.ModelForm):
             'payment_receipt_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
             'donation_reference_number': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
         }
+
+
+from .models import RegularLevy
+
+class RegularLevyForm(forms.ModelForm):
+    class Meta:
+        model = RegularLevy
+        fields = ['user', 'month', 'year', 'payment_for', 'amount', 'cda', 'status', 'proof_of_payment']
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'month': forms.Select(attrs={'class': 'form-control'}),
+            'year': forms.NumberInput(attrs={'class': 'form-control'}),
+            'payment_for': forms.Select(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'cda': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'proof_of_payment': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }

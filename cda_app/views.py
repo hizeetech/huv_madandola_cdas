@@ -19,10 +19,7 @@ from .models import (
 from django.contrib.auth import get_user_model
 from .models import CustomUser
 """ from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm """
-from .forms import (
-    CustomUserCreationForm, CustomAuthenticationForm,
-    AdvertItemForm, AdvertImageFormSet, DonationProofForm
-)
+from .forms import ( CustomUserCreationForm, CustomAuthenticationForm, AdvertItemForm, AdvertImageFormSet, DonationProofForm, RegularLevyForm)
 
 from .utils import (
     send_registration_email, 
@@ -245,6 +242,22 @@ def profile(request):
         'payment_history': payment_history,
         'outstanding_levies': outstanding_levies
     })
+
+
+@login_required
+def upload_regular_levy_proof(request, levy_id):
+    levy = get_object_or_404(RegularLevy, id=levy_id, user=request.user)
+    if request.method == 'POST':
+        form = RegularLevyForm(request.POST, request.FILES, instance=levy)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Proof of payment uploaded successfully.')
+            return redirect('profile')  # Redirect to user profile or a confirmation page
+        else:
+            messages.error(request, 'Error uploading proof of payment. Please check the form.')
+    else:
+        form = RegularLevyForm(instance=levy)
+    return render(request, 'upload_proof.html', {'form': form, 'levy': levy})
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required

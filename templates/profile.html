@@ -71,9 +71,9 @@
                                             <td>{{ levy.cda }}</td>
                                             <td>
                                                 {% if levy.status == 'unpaid' or levy.status == 'rejected' %}
-                                                <button class="btn btn-primary btn-sm pay-now-btn" data-bs-toggle="modal" data-bs-target="#paymentModal" data-levy-id="{{ levy.id }}">
-                                                    Pay Now
-                                                </button> {% elif levy.status == 'pending' %}
+                                                <a href="{% url 'upload_regular_levy_proof' levy.id %}" class="btn btn-primary btn-sm">
+                                                     Pay Now
+                                                 </a> {% elif levy.status == 'pending' %}
                                                 <button class="btn btn-warning btn-sm" disabled>
                                                     Pending
                                                 </button> {% elif levy.status == 'paid' %}
@@ -183,21 +183,7 @@
     </div>
 </div>
 
-<!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="paymentModalLabel">Upload Proof of Payment</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="paymentForm" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" id="levyId" name="levy_id" value="">
-                    <input type="hidden" id="category" name="category" value="">
-                    <div class="mb-3">
-                        <label for="proofImage" class="form-label">Payment Proof (Image)</label>
+
                         <input class="form-control" type="file" id="proofImage" name="proof_image" required accept="image/jpeg, image/png">
                         <div class="form-text">Upload a clear image of your payment receipt (JPEG or PNG, max 2MB).</div>
                     </div>
