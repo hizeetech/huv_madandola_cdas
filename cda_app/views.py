@@ -179,11 +179,18 @@ def user_login(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if user is not None:
-                login(request, user)
-                next_url = request.POST.get('next', request.GET.get('next', ''))
-                if next_url:
-                    return redirect(next_url)
-                return redirect('home')
+                if not user.is_active:
+                    messages.error(request, 'Your account is inactive. Please contact an administrator.')
+                elif not user.is_approved:
+                    messages.error(request, 'Your account is awaiting admin approval. Please wait for approval.')
+                else:
+                    login(request, user)
+                    next_url = request.POST.get('next', request.GET.get('next', ''))
+                    if next_url:
+                        return redirect(next_url)
+                    return redirect('home')
+            else:
+                messages.error(request, 'Please enter a correct username and password. Note that both fields may be case-sensitive.')
     else:
         form = CustomAuthenticationForm()
     

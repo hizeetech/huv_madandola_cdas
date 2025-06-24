@@ -1,8 +1,10 @@
-{% extends 'base.html' %} {% load widget_tweaks %} {% block title %}Register - Madandola Estate CDA{% endblock %} {% block content %}
+{% extends 'base.html' %} {% load widget_tweaks %} {% block title %}Register - Madandola Estate CDA{% endblock %} {% block content %} {% load static %}
+<link rel="stylesheet" href="{% static 'css/custom.css' %}">
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">Register</div>
+            <div class="card-header bg-primary text-white">Register</div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
@@ -20,19 +22,19 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.username.id_for_label }}">Username</label> {{ form.username|add_class:"form-control" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.email.id_for_label }}">Email</label> {{ form.email|add_class:"form-control" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.phone_number.id_for_label }}">Phone Number</label> {{ form.phone_number|add_class:"form-control" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label>User Type</label>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="user_type" id="landlord" value="landlord">
@@ -44,22 +46,26 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.cda.id_for_label }}">CDA</label> {{ form.cda|add_class:"form-control" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="card-header bg-primary text-white form-group mb-3 profile-image-upload">
                         <label for="{{ form.image.id_for_label }}">Profile Image</label> {{ form.image|add_class:"form-control-file" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.password1.id_for_label }}">Password</label> {{ form.password1|add_class:"form-control" }}
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-3">
                         <label for="{{ form.password2.id_for_label }}">Confirm Password</label> {{ form.password2|add_class:"form-control" }}
                     </div>
-
+                    <div class="form-group col-md-12 mb-3">
+                        <label>Captcha *</label> {{ form.captcha }} {% if form.captcha.errors %}
+                        <div class="text-danger small">{{ form.captcha.errors }}</div>
+                        {% endif %}
+                    </div>
                     <button type="submit" class="btn btn-primary w-100">Register</button>
                 </form>
             </div>

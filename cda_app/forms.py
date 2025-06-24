@@ -2,6 +2,8 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
 from .models import CustomUser, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
+from captcha.fields import ReCaptchaField
+from captcha.widgets import ReCaptchaV2Checkbox
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -19,11 +21,13 @@ class CustomUserCreationForm(UserCreationForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+    
     class Meta(UserCreationForm.Meta):
         model = CustomUser
         fields = ('username', 'email', 'first_name', 'last_name', 
                 'phone_number', 'user_type', 'cda', 'image',
-                'password1', 'password2')
+                'password1', 'password2', 'captcha')
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,8 +91,7 @@ class CustomAuthenticationForm(AuthenticationForm):
         super().__init__(*args, **kwargs)
         for field_name in self.fields:
             self.fields[field_name].widget.attrs.update({'class': 'form-control'})
-
-# [Keep your other form classes as they are]
+        self.fields['captcha'] = ReCaptchaField(widget=ReCaptchaV2Checkbox())
 
 class AdvertItemForm(forms.ModelForm):
     class Meta:
