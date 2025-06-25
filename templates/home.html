@@ -1,386 +1,194 @@
 {% extends 'base.html' %} {% load humanize %} {% load static %} {% load batch_filter %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
-<style>
-    /* Jumbotron */
-    
-    .jumbotron {
-        padding: 2rem;
-        background-color: #007bff;
-        color: white;
-        border-radius: 0.3rem;
-        margin-bottom: 2rem;
-    }
-    
-    .jumbotron h1 {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-    /* Paid Members Slider */
-    
-    .paid-members-container {
-        width: 100%;
-        overflow: hidden;
-        position: relative;
-        height: 250px;
-        border: 1px solid #ddd;
-        margin-bottom: 2rem;
-    }
-    
-    .paid-members-slider {
-        display: flex;
-        flex-direction: column;
-        animation: slide-up 20s linear infinite;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-    }
-    
-    .paid-member-card {
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        width: 100%;
-        margin-bottom: 15px;
-    }
-    
-    .paid-member-card img {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        margin: 0 auto 10px;
-    }
-    /* Executive Carousel */
-    
-    .carousel-inner .rounded-circle {
-        width: 150px;
-        height: 150px;
-        border: 3px solid #555;
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
-    }
-    /* Contact Heading */
-    
-    .contact-cda-heading {
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        padding: 0 15px;
-        text-align: center;
-    }
-    /* Community Info Cards */
-    
-    .community-info-card {
-        margin-bottom: 20px;
-    }
-    /* Tables */
-    
-    .table-responsive {
-        margin-bottom: 2rem;
-    }
-    /* Project Donations */
-    
-    .project-donations-section {
-        margin-top: 3rem;
-        margin-bottom: 3rem;
-    }
-    
-    .img-thumbnail {
-        max-width: 100px;
-        max-height: 100px;
-    }
-    /* Responsive adjustments */
-    
-    @media (max-width: 992px) {
-        .jumbotron h1 {
-            font-size: 1.7rem;
-        }
-        .carousel-inner .rounded-circle {
-            width: 120px;
-            height: 120px;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .jumbotron {
-            padding: 1.5rem;
-        }
-        .jumbotron h1 {
-            font-size: 1.5rem;
-        }
-        .paid-members-container {
-            height: 220px;
-        }
-        .paid-member-card {
-            padding: 10px;
-        }
-        .paid-member-card img {
-            width: 80px;
-            height: 80px;
-        }
-        .carousel-inner .rounded-circle {
-            width: 100px;
-            height: 100px;
-        }
-        h2 {
-            font-size: 1.5rem;
-        }
-        .contact-cda-heading {
-            font-size: 1.2rem;
-            padding: 0 10px;
-        }
-        /* Convert table to stacked layout on mobile */
-        .table-responsive table {
-            width: 100%;
-        }
-        .table-responsive thead {
-            display: none;
-        }
-        .table-responsive tr {
-            display: block;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #ddd;
-        }
-        .table-responsive td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: right;
-            padding-left: 50%;
-            position: relative;
-            border-bottom: 1px dotted #ccc;
-        }
-        .table-responsive td::before {
-            content: attr(data-label);
-            position: absolute;
-            left: 10px;
-            width: 45%;
-            padding-right: 10px;
-            font-weight: bold;
-            text-align: left;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .jumbotron h1 {
-            font-size: 1.3rem;
-        }
-        .paid-members-container {
-            height: 200px;
-        }
-        .paid-member-card img {
-            width: 60px;
-            height: 60px;
-        }
-        .carousel-inner .rounded-circle {
-            width: 80px;
-            height: 80px;
-        }
-        h2 {
-            font-size: 1.3rem;
-        }
-        .contact-cda-heading {
-            font-size: 0.9rem;
-            padding: 0 8px;
-        }
-        /* Filter form adjustments */
-        .float-right.form-inline {
-            float: none !important;
-        }
-        .form-inline .form-group {
-            margin-bottom: 10px;
-            width: 100%;
-        }
-        .form-inline .form-control {
-            width: 100% !important;
-        }
-    }
-    
-    @media (max-width: 400px) {
-        .jumbotron h1 {
-            font-size: 1.1rem;
-        }
-        .paid-members-container {
-            height: 180px;
-        }
-        .contact-cda-heading {
-            font-size: 0.8rem;
-            padding: 0 5px;
-        }
-    }
-    
-    @keyframes slide-up {
-        0% {
-            transform: translateY(100%);
-        }
-        100% {
-            transform: translateY(-100%);
-        }
-    }
-</style>
-
-<div class="row">
-    <div class="col-12">
-        <div class="jumbotron bg-primary text-white">
-            <h1 class="display-4 text-center font-weight-bold">Welcome to Madandola Estate CDAs {% if user.is_authenticated and user.userprofile.image %}
-                <img src="{{ user.userprofile.image.url }}" alt="User Profile Image" class="rounded-circle ml-3" width="80" height="80"> {% endif %}
-            </h1>
-        </div>
-    </div>
-
-    <!-- Paid Members Section -->
-    <div class="col-12">
-        <h2 class="mt-4 text-center text-uppercase">Members Who Have Paid Dues</h2>
-        <div class="paid-members-container">
-            <div class="paid-members-slider">
-                {% for member in paid_members %}
-                <div class="paid-member-card">
-                    {% if member.image %}
-                    <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle"> {% else %}
-                    <img src="{% static 'images/default_profile.png' %}" alt="Default Image" class="rounded-circle"> {% endif %}
-                    <h5>{{ member.name }}</h5>
-                    <p><strong>CDA:</strong> {{ member.cda }}</p>
-                    <p><strong>Amount Paid:</strong> ₦{{ member.amount_paid|intcomma }}</p>
-                    <p><strong>Purpose:</strong> {{ member.purpose_of_payment }}</p>
-                    <p><strong>Date:</strong> {{ member.payment_date|date:"M d, Y" }}</p>
+<!-- Project Donation Modal (if needed) -->
+{% if project_donation_modal %}
+<div class="modal fade" id="projectDonationModal" tabindex="-1" aria-labelledby="projectDonationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #f8f9fa; border-radius: 10px;">
+            <div class="modal-header">
+                <h5 class="modal-title text-center w-100 fw-bold" id="projectDonationModalLabel">{{ project_donation_modal.title }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center">
+                    {% if project_donation_modal.image %}
+                    <img src="{{ project_donation_modal.image.url }}" class="img-fluid mb-3 mx-auto d-block rounded" alt="{{ project_donation_modal.title }}"> {% endif %}
+                    <div class="modal-content-text">
+                        {{ project_donation_modal.content|safe }}
+                    </div>
+                    {% if project_donation_modal.button_link %}
+                    <a href="{{ project_donation_modal.button_link }}" class="btn btn-primary mt-3 px-4 py-2">{{ project_donation_modal.title }}</a> {% endif %}
                 </div>
-                {% empty %}
-                <div class="paid-member-card">
-                    <p>No paid members found.</p>
-                </div>
-                {% endfor %}
+            </div>
+            <div class="modal-footer p-3">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Executive Members Carousel -->
-    <h2 class="mt-4 text-center text-uppercase contact-cda-heading">Contact Community Development Association CDA</h2>
-    <br><br>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal display logic
+        var projectDonationModalElement = document.getElementById('projectDonationModal');
+        if (projectDonationModalElement) {
+            var myModal = new bootstrap.Modal(projectDonationModalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            myModal.show();
+        }
+
+        // Intersection Observer for fade-in animation
+        const cards = document.querySelectorAll('.card');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+{% endif %}
+
+<!-- Hero Section with reduced padding -->
+<section class="hero-section bg-primary text-white py-3">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-2">Welcome to Madandola Estate CDA</h1>
+        <p class="lead mb-2">Building our community together</p>
+        {% if user.is_authenticated and user.image %}
+        <img src="{{ user.image.url }}" alt="User Profile Image" class="rounded-circle mt-2 border border-4 border-white shadow" width="80" height="80"> {% endif %}
+    </div>
+</section>
+
+<!-- Main Content -->
+<style>
+    /* Fade-in animation for cards */
+    .card {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .card.fade-in {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Scale-up effect on hover for interactive elements */
+    .paid-member-card,
+    .community-info-card,
+    .btn {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .paid-member-card:hover,
+    .community-info-card:hover,
+    .btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal fade-in */
+    .modal.fade .modal-dialog {
+        transition: transform .3s ease-out;
+        transform: translateY(-50px);
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+</style>
+
+<div class="container mt-3">
+
+    <!-- Paid Members Section -->
     <div class="row">
-        <div class="col-md-12">
-            <div id="executiveMembersCarousel" class="carousel slide" data-ride="carousel">
-                <div class="carousel-inner">
-                    {% for group in executive_members|batch:3 %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="d-flex justify-content-around">
-                            {% for member in group %}
-                            <div class="text-center mx-2">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h2 class="h5 mb-0 text-center text-uppercase fw-bold">Members Who Have Paid Dues</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="paid-members-container">
+                        <div class="paid-members-slider">
+                            {% for member in paid_members %}
+                            <div class="paid-member-card">
                                 {% if member.image %}
-                                <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle mb-3" width="150" height="150" style="border: 3px solid #555; box-shadow: 0 0 8px rgba(0,0,0,0.4);"> {% endif %}
-                                <h5 class="text-center"><b>{{ member.name }}</b></h5>
-                                <p class="text-center"><strong><b>{{ member.position }}</b></strong></p>
-                                {% if member.phone_number %}
-                                <p class="text-center"><small>Phone: {{ member.phone_number }}</small></p>
-                                {% endif %}
+                                <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle shadow"> {% else %}
+                                <img src="{% static 'images/default_profile.png' %}" alt="Default Image" class="rounded-circle shadow"> {% endif %}
+                                <h5 class="mt-2">{{ member.name }}</h5>
+                                <p><strong>CDA:</strong> {{ member.cda }}</p>
+                                <p><strong>Amount Paid:</strong> ₦{{ member.amount_paid|intcomma }}</p>
+                                <p><strong>Purpose:</strong> {{ member.purpose_of_payment }}</p>
+                                <p><strong>Date:</strong> {{ member.payment_date|date:"M d, Y" }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="paid-member-card">
+                                <p>No paid members found.</p>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- Community Information -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-white py-2">
+                    <h2 class="h5 mb-0">Community Information</h2>
+                </div>
+                <div class="card-body py-2">
+                    {% for info in community_info %}
+                    <div class="community-info-card mb-2 p-2 bg-light rounded">
+                        <h5 class="card-title text-primary">{{ info.title }}</h5>
+                        <p class="card-text">{{ info.content }}</p>
+                        <small class="text-muted">Published: {{ info.published_date|date:"M d, Y" }}</small>
+                    </div>
                     {% empty %}
-                    <p class="text-center">No executive members found.</p>
+                    <p class="text-center text-muted">No community information available.</p>
                     {% endfor %}
                 </div>
-                <a class="carousel-control-prev" href="#executiveMembersCarousel" role="button" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-                <a class="carousel-control-next" href="#executiveMembersCarousel" role="button" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
             </div>
+
         </div>
     </div>
-
-    <!-- Community Information -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h2>Community Information</h2>
-            {% for info in community_info %}
-            <div class="card mb-2 community-info-card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ info.title }}</h5>
-                    <p class="card-text">{{ info.content }}</p>
-                    <small class="text-muted">Published: {{ info.published_date|date:"M d, Y" }}</small>
-                </div>
+</div>
+<!-- Project Donations Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white py-2">
+                <h2 class="h5 mb-0">Project Donations</h2>
             </div>
-            {% empty %}
-            <p>No community information available.</p>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Upcoming Events -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-12">
-                <h2 class="mb-4">Upcoming Events</h2>
-                <div class="row">
-                    <div class="col-md-12">
-                        {% if upcoming_events %}
-                        <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                {% for event in upcoming_events %}
-                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <div class="card mb-3">
-                                        <div class="row g-0">
-                                            <div class="col-md-4">
-                                                {% if event.image %}
-                                                <img src="{{ event.image.url }}" class="img-fluid rounded-start" alt="{{ event.title }}"> {% else %}
-                                                <img src="{% static 'images/default_event.png' %}" class="img-fluid rounded-start" alt="Default Event Image"> {% endif %}
-                                            </div>
-                                            <div class="col-md-8">
-                                                <div class="card-body">
-                                                    <h5 class="card-title">{{ event.title }}</h5>
-                                                    <p class="card-text">{{ event.description|truncatechars:150 }}</p>
-                                                    <p class="card-text"><small class="text-muted">Date: {{ event.date|date:"M d, Y" }}</small></p>
-                                                    <p class="card-text"><small class="text-muted">Time: {{ event.time|time:"h:i A" }}</small></p>
-                                                    <p class="card-text"><small class="text-muted">Location: {{ event.location }}</small></p>
-                                                    <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm">View Details</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        </div>
-                        {% else %}
-                        <p>No upcoming events at the moment.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Project Donations Section -->
-    <div class="container project-donations-section">
-        <div class="row">
-            <div class="col-md-12">
-                <h2 class="mb-4">Project Donations</h2>
+            <div class="card-body py-2">
                 {% if project_donations %}
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
                             <tr>
                                 <th>S/N</th>
                                 <th>Title</th>
                                 <th>Description</th>
-                                <th>Reference Number</th>
+                                <th>Reference</th>
                                 <th>Estimated Cost</th>
-                                <th>Images</th>
                                 <th>Actions</th>
-                                <th>Payment Proof</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -391,26 +199,19 @@
                                 <td>
                                     <span id="short-description-{{ project.id }}">{{ project.description|truncatechars:50 }}</span>
                                     <span id="full-description-{{ project.id }}" style="display: none;">{{ project.description }}</span> {% if project.description|length > 50 %}
-                                    <a href="#" onclick="toggleDescription({{ project.id }}); return false;" id="toggle-link-{{ project.id }}">Read More</a> {% endif %}
+                                    <a href="#" onclick="toggleDescription({{ project.id }}); return false;" id="toggle-link-{{ project.id }}" class="text-primary">Read More</a> {% endif %}
                                 </td>
                                 <td>{{ project.reference_number }}</td>
                                 <td>₦{{ project.estimated_cost|floatformat:2|intcomma }}</td>
                                 <td>
-                                    {% for image in project.images.all %}
-                                    <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-src="{{ image.image.url }}">
-                                        <img src="{{ image.image.url }}" alt="Project Image" width="50" height="50" class="img-thumbnail m-1">
-                                    </a>
-                                    {% empty %} No Images {% endfor %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
-                                        <i class="fas fa-donate"></i> Donate
-                                    </button>
-                                </td>
-                                <td>
-                                    <a href="{% url 'upload_donation_proof' donation_id=project.id %}" class="btn btn-info btn-sm">
-                                        <i class="fas fa-upload"></i> Proof
-                                    </a>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
+                                                <i class="fas fa-donate"></i> Donate
+                                            </button>
+                                        <a href="{% url 'upload_donation_proof' donation_id=project.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-upload"></i> Proof
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -418,219 +219,566 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="alert alert-info">No project donations available at the moment.</div>
+                <div class="alert alert-info py-2">No project donations available at the moment.</div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Defaulters/Owing Members -->
+    <!-- Executive Members Carousel -->
     <div class="row">
-        <div class="col-md-12">
-            <h2 class="mt-4">Defaulters/Owing Members</h2>
+        <div class="col-12">
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-white py-2">
+                    <h2 class="h5 mb-0 text-center text-uppercase fw-bold">Community Leadership</h2>
+                </div>
+                <div class="card-body py-2">
+                    <div id="executiveMembersCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-pause="hover">
+                        <div class="carousel-inner">
+                            {% for group in executive_members|batch:3 %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <div class="d-flex justify-content-around flex-wrap">
+                                    {% for member in group %}
+                                    <div class="text-center mx-1 mb-2">
+                                        {% if member.image %}
+                                        <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle mb-1 shadow" width="80" height="80"> {% endif %}
+                                        <h5 class="text-center"><b>{{ member.name }}</b></h5>
+                                        <p class="text-center text-primary"><strong>{{ member.position }}</strong></p>
+                                        {% if member.phone_number %}
+                                        <p class="text-center"><small>Phone: {{ member.phone_number }}</small></p>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-muted">No executive members found.</p>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#executiveMembersCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon bg-primary rounded-circle p-1" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#executiveMembersCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon bg-primary rounded-circle p-1" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Upcoming Events -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm mt-3">
+                    <div class="card-header bg-white py-2">
+                        <h2 class="h5 mb-0">Upcoming Events</h2>
+                    </div>
+                    <div class="card-body py-2">
+                        {% if upcoming_events %}
+                        <div id="eventCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for event in upcoming_events %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <div class="card border-0">
+                                        {% if event.image %}
+                                        <img src="{{ event.image.url }}" class="card-img-top rounded" alt="{{ event.title }}"> {% else %}
+                                        <img src="{% static 'images/default_event.png' %}" class="card-img-top rounded" alt="Default Event Image"> {% endif %}
+                                        <div class="card-body p-2">
+                                            <h5 class="card-title">{{ event.title }}</h5>
+                                            <p class="card-text text-muted">{{ event.description|truncatechars:100 }}</p>
+                                            <div class="d-flex justify-content-between small text-muted">
+                                                <span><i class="far fa-calendar-alt me-1"></i> {{ event.date|date:"M d, Y" }}</span>
+                                                <span><i class="far fa-clock me-1"></i> {{ event.time|time:"h:i A" }}</span>
+                                            </div>
+                                            <a href="{% url 'event_detail' event.id %}" class="btn btn-primary btn-sm mt-2 w-100">View Details</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#eventCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon bg-primary rounded-circle p-1" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#eventCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon bg-primary rounded-circle p-1" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted">No upcoming events at the moment.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Birthday Celebrants Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm mt-3">
+                        <div class="card-header bg-white py-2">
+                            <h2 class="h5 mb-0 text-center">Birthday Celebrant(s)</h2>
+                        </div>
+                        <div class="card-body py-2">
+                            {% for celebrant in birthday_celebrants %}
+                            <div class="text-center mb-3">
+                                {% if celebrant.image %}
+                                <img src="{{ celebrant.image.url }}" class="rounded-circle shadow mb-1 border border-3 border-warning" alt="{{ celebrant.name }}" width="80" height="80"> {% endif %}
+                                <h5>{{ celebrant.name }}</h5>
+                                <p class="text-muted">{{ celebrant.admin_wishes }}</p>
 
-            <div class="row mb-3">
-                <div class="col-md-6 offset-md-6">
-                    <form method="get" class="form-inline float-right">
-                        <div class="form-group mr-2">
-                            <label for="cda_filter" class="sr-only">Filter by CDA</label>
-                            <select name="cda" id="cda_filter" class="form-control">
+                                <!-- Well Wishes Display -->
+                                <div class="well-wishes-container bg-light p-2 rounded">
+                                    <h6 class="text-center">Well Wishes</h6>
+                                    {% for wish in celebrant.well_wishes.all %}
+                                    <div class="mb-2 p-2 bg-white rounded">
+                                        <p class="mb-0"><strong>{{ wish.sender_name }}:</strong> {{ wish.message }}</p>
+                                        <small class="text-muted">{{ wish.created_at|date:"M d, Y H:i" }}</small>
+                                        <!-- Reply Button (toggle) -->
+                                        <button class="btn btn-sm btn-outline-secondary mt-1" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ wish.id }}">
+                                        Reply
+                                    </button>
+                                        <!-- Reply Form (hidden by default) -->
+                                        <div id="replyForm-{{ wish.id }}" class="collapse mt-1">
+                                            <form method="post" action="{% url 'reply_to_wish' wish.id %}">
+                                                {% csrf_token %}
+                                                <div class="mb-1">
+                                                    <textarea name="reply_message" class="form-control form-control-sm" rows="2" placeholder="Your reply..."></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary btn-sm">Send Reply</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <p class="text-center text-muted">No well wishes yet.</p>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Send Well Wish Form -->
+                                <button class="btn btn-outline-primary btn-sm mt-2" data-bs-toggle="collapse" data-bs-target="#wishForm-{{ celebrant.id }}">
+                                Send Well Wish
+                            </button>
+
+                                <div id="wishForm-{{ celebrant.id }}" class="collapse mt-2">
+                                    <form method="post" action="{% url 'home' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="celebrant_id" value="{{ celebrant.id }}">
+                                        <div class="mb-2">
+                                            <label for="sender_name-{{ celebrant.id }}" class="form-label">Your Name:</label>
+                                            <input type="text" name="sender_name" id="sender_name-{{ celebrant.id }}" class="form-control form-control-sm" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label for="message-{{ celebrant.id }}" class="form-label">Your Message:</label>
+                                            <textarea name="message" id="message-{{ celebrant.id }}" class="form-control form-control-sm" rows="2" required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">Submit Wish</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-muted">No birthday celebrants today.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Defaulters/Owing Members -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white py-2">
+                <h2 class="h5 mb-0">Defaulters/Owing Members</h2>
+            </div>
+            <div class="card-body py-2">
+                <div class="alert alert-warning py-2">
+                    <p class="mb-0">The following members have outstanding payments. Please settle your dues to support community development.</p>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-md-12 col-lg-6 offset-lg-6">
+                        <form method="get" class="row g-2">
+                            <div class="col-5">
+                                <select name="cda" id="cda_filter" class="form-select form-select-sm">
                                 <option value="">All CDAs</option>
                                 {% for value, label in cdas %}
                                     <option value="{{ value }}" {% if selected_cda == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="form-group mr-2">
-                            <label for="debt_for_filter" class="sr-only">Filter by Debt For</label>
-                            <select name="debt_for" id="debt_for_filter" class="form-control">
+                            </div>
+                            <div class="col-5">
+                                <select name="debt_for" id="debt_for_filter" class="form-select form-select-sm">
                                 <option value="">All Debt Reasons</option>
                                 {% for value, label in debt_for_choices %}
                                     <option value="{{ value }}" {% if selected_debt_for == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
+                            </div>
+                            <div class="col-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Profile</th>
+                                <th>Name</th>
+                                <th>CDA</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th>Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for defaulter in defaulters %}
+                            <tr>
+                                <td>
+                                    {% if defaulter.image %}
+                                    <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" class="rounded-circle" width="40" height="40"> {% else %}
+                                    <span class="text-muted">N/A</span> {% endif %}
+                                </td>
+                                <td>{{ defaulter.name }}</td>
+                                <td>{{ defaulter.cda }}</td>
+                                <td>₦{{ defaulter.amount_indebted|intcomma }}</td>
+                                <td>{{ defaulter.title_defaulted }}</td>
+                                <td>{{ defaulter.phone_number|default:"N/A" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No defaulters found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Zoom Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Image Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="" id="modalImage" class="img-fluid rounded" alt="Zoom Image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="donateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="donateModalLabel">Donation Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h5 id="projectTitle" class="text-success mb-2"></h5>
+                    <div class="list-group mb-2">
+                        <div class="list-group-item py-2">
+                            <strong>Bank Name:</strong> <span id="bankName" class="float-end"></span>
                         </div>
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                    </form>
+                        <div class="list-group-item py-2">
+                            <strong>Account Number:</strong> <span id="accountNumber" class="float-end"></span>
+                        </div>
+                        <div class="list-group-item py-2">
+                            <strong>Beneficiary:</strong> <span id="beneficiary" class="float-end"></span>
+                        </div>
+                        <div class="list-group-item py-2">
+                            <strong>Reference Number:</strong> <span id="referenceNumber" class="float-end"></span>
+                        </div>
+                    </div>
+                    <div class="alert alert-info py-2">
+                        Please use the above details to make your donation. Thank you for supporting this project!
+                    </div>
                 </div>
-            </div>
-
-            <div class="alert alert-warning" role="alert">
-                <p>The following members have outstanding payments. Please settle your dues to support community development.</p>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Profile Picture</th>
-                            <th>Name</th>
-                            <th>CDA</th>
-                            <th>Amount Indebted</th>
-                            <th>Debt For</th>
-                            <th>Phone Number</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for defaulter in defaulters %}
-                        <tr>
-                            <td>
-                                {% if defaulter.image %}
-                                <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" width="50" height="50" class="rounded-circle"> {% else %} N/A {% endif %}
-                            </td>
-                            <td>{{ defaulter.name }}</td>
-                            <td>{{ defaulter.cda }}</td>
-                            <td>₦{{ defaulter.amount_indebted|intcomma }}</td>
-                            <td>{{ defaulter.title_defaulted }}</td>
-                            <td>{{ defaulter.phone_number }}</td>
-                            <td>{{ defaulter.notes|default:"N/A" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center">No defaulters found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Zoom Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content bg-dark text-white border-0">
-            <div class="modal-header border-0">
-                <h5 class="modal-title">Zoom Image</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0 m-0 d-flex justify-content-center align-items-center" style="overflow: hidden;">
-                <div id="panzoom-container" class="w-100 h-100 d-flex justify-content-center align-items-center" style="overflow: hidden;">
-                    <img src="" id="modalImage" class="img-fluid" style="cursor: grab; max-width: none;" alt="Zoom Image">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i> Print Details
+                </button>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Donate Modal -->
-<div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="donateModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="donateModalLabel">Donation Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <h5 id="projectTitle" class="text-success mb-3"></h5>
-                <p><strong>Bank Name:</strong> <span id="bankName"></span></p>
-                <p><strong>Account Number:</strong> <span id="accountNumber"></span></p>
-                <p><strong>Beneficiary:</strong> <span id="beneficiary"></span></p>
-                <p><strong>Reference Number:</strong> <span id="referenceNumber"></span></p>
-                <div class="alert alert-info mt-3">
-                    Please use the above details to make your donation. Thank you for supporting this project!
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    <style>
+         :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --accent-color: #ffc107;
+            --light-bg: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        /* Hero Section */
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* Cards */
+        
+        .card {
+            border: none;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        /* Paid Members Slider */
+        
+        .paid-members-container {
+            height: 250px;
+            background: var(--light-bg);
+            border-radius: 0 0 8px 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .paid-members-slider {
+            display: flex;
+            flex-direction: column;
+            animation: slide-up 20s linear infinite;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+        }
+        
+        .paid-member-card {
+            background: white;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin: 0.5rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .paid-member-card img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border: 2px solid var(--primary-color);
+        }
+        /* Well Wishes Styling */
+        
+        .well-wishes-container {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        /* Animations */
+        
+        @keyframes slide-up {
+            0% {
+                transform: translateY(100%);
+            }
+            100% {
+                transform: translateY(-100%);
+            }
+        }
+        /* Responsive Adjustments */
+        
+        @media (max-width: 992px) {
+            .hero-section {
+                padding: 1.5rem 0;
+            }
+            .paid-members-container {
+                height: 200px;
+            }
+            .carousel-inner .rounded-circle {
+                width: 70px;
+                height: 70px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 1.8rem;
+            }
+            .hero-section .lead {
+                font-size: 1rem;
+            }
+            .paid-members-container {
+                height: 180px;
+            }
+            /* Mobile table styles */
+            .table-responsive table {
+                width: 100%;
+            }
+            .table-responsive thead {
+                display: none;
+            }
+            .table-responsive tr {
+                display: block;
+                margin-bottom: 0.75rem;
+                border-bottom: 2px solid #ddd;
+            }
+            .table-responsive td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+                border-bottom: 1px dotted #ccc;
+            }
+            .table-responsive td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                width: 45%;
+                padding-right: 10px;
+                font-weight: bold;
+                text-align: left;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero-section {
+                padding: 1rem 0;
+            }
+            .hero-section h1 {
+                font-size: 1.5rem;
+            }
+            .paid-members-container {
+                height: 160px;
+            }
+            .paid-member-card img {
+                width: 50px;
+                height: 50px;
+            }
+            .filter-form .col-5,
+            .filter-form .col-2 {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            .filter-form .col-md-6.offset-md-6 {
+                margin-left: 0;
+                padding-left: 0;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .hero-section h1 {
+                font-size: 1.3rem;
+            }
+            .paid-members-container {
+                height: 140px;
+            }
+        }
+    </style>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Convert table to mobile-friendly format
-        function adaptTableForMobile() {
-            if (window.innerWidth <= 768) {
-                const table = document.querySelector('.table');
-                if (table) {
-                    const headers = [];
-                    // Get headers
-                    document.querySelectorAll('.table thead th').forEach((th, index) => {
-                        headers[index] = th.textContent.trim();
-                    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pause paid members slider on hover/touch
+            const slider = document.querySelector('.paid-members-slider');
+            if (slider) {
+                slider.addEventListener('mouseenter', () => {
+                    slider.style.animationPlayState = 'paused';
+                });
 
-                    // Apply data-labels to cells
-                    document.querySelectorAll('.table tbody tr').forEach(tr => {
-                        tr.querySelectorAll('td').forEach((td, index) => {
-                            td.setAttribute('data-label', headers[index]);
-                        });
-                    });
+                slider.addEventListener('mouseleave', () => {
+                    slider.style.animationPlayState = 'running';
+                });
+
+                // For touch devices
+                slider.addEventListener('touchstart', () => {
+                    slider.style.animationPlayState = 'paused';
+                });
+
+                slider.addEventListener('touchend', () => {
+                    slider.style.animationPlayState = 'running';
+                });
+
+                // Adjust animation duration based on number of items
+                const items = slider.querySelectorAll('.paid-member-card').length;
+                if (items > 0) {
+                    const baseDuration = window.innerWidth < 768 ? 8 : 5;
+                    const duration = items * baseDuration;
+                    slider.style.animationDuration = `${duration}s`;
                 }
             }
-        }
 
-        // Run on load and resize
-        adaptTableForMobile();
-        window.addEventListener('resize', adaptTableForMobile);
+            // Initialize image modal
+            const imageModal = document.getElementById('imageModal');
+            if (imageModal) {
+                imageModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const imageSrc = button.getAttribute('data-bs-src');
+                    const modalImage = imageModal.querySelector('#modalImage');
+                    modalImage.src = imageSrc;
+                });
+            }
 
-        // Pause paid members slider on hover/touch
-        const slider = document.querySelector('.paid-members-slider');
-        if (slider) {
-            slider.addEventListener('mouseenter', () => {
-                slider.style.animationPlayState = 'paused';
-            });
+            // Initialize donate modal
+            const donateModal = document.getElementById('donateModal');
+            if (donateModal) {
+                donateModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    document.getElementById('projectTitle').textContent = button.getAttribute('data-title');
+                    document.getElementById('bankName').textContent = button.getAttribute('data-bank');
+                    document.getElementById('accountNumber').textContent = button.getAttribute('data-account');
+                    document.getElementById('beneficiary').textContent = button.getAttribute('data-beneficiary');
+                    document.getElementById('referenceNumber').textContent = button.getAttribute('data-reference');
+                });
+            }
 
-            slider.addEventListener('mouseleave', () => {
-                slider.style.animationPlayState = 'running';
-            });
+            // Add data-labels to table cells for mobile
+            function adaptTableForMobile() {
+                if (window.innerWidth <= 768) {
+                    const table = document.querySelector('.table-responsive table');
+                    if (table) {
+                        const headers = [];
+                        // Get headers
+                        table.querySelectorAll('thead th').forEach((th, index) => {
+                            headers[index] = th.textContent.trim();
+                        });
 
-            // For touch devices
-            slider.addEventListener('touchstart', () => {
-                slider.style.animationPlayState = 'paused';
-            });
+                        // Apply data-labels to cells
+                        table.querySelectorAll('tbody tr').forEach(tr => {
+                            tr.querySelectorAll('td').forEach((td, index) => {
+                                td.setAttribute('data-label', headers[index]);
+                            });
+                        });
+                    }
+                }
+            }
 
-            slider.addEventListener('touchend', () => {
-                slider.style.animationPlayState = 'running';
-            });
+            // Run on load and resize
+            adaptTableForMobile();
+            window.addEventListener('resize', adaptTableForMobile);
+        });
 
-            // Adjust animation duration based on number of items
-            const items = slider.querySelectorAll('.paid-member-card').length;
-            if (items > 0) {
-                const duration = items * 8; // 3 seconds per item
-                slider.style.animationDuration = `${duration}s`;
+        function toggleDescription(projectId) {
+            const shortDesc = document.getElementById(`short-description-${projectId}`);
+            const fullDesc = document.getElementById(`full-description-${projectId}`);
+            const toggleLink = document.getElementById(`toggle-link-${projectId}`);
+
+            if (shortDesc.style.display === 'none') {
+                shortDesc.style.display = 'inline';
+                fullDesc.style.display = 'none';
+                toggleLink.textContent = 'Read More';
+            } else {
+                shortDesc.style.display = 'none';
+                fullDesc.style.display = 'inline';
+                toggleLink.textContent = 'Read Less';
             }
         }
-
-        // Initialize image modal
-        const imageModal = document.getElementById('imageModal');
-        if (imageModal) {
-            imageModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const imageSrc = button.getAttribute('data-bs-src');
-                const modalImage = imageModal.querySelector('#modalImage');
-                modalImage.src = imageSrc;
-            });
-        }
-
-        // Initialize donate modal
-        const donateModal = document.getElementById('donateModal');
-        if (donateModal) {
-            donateModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                document.getElementById('projectTitle').textContent = button.getAttribute('data-title');
-                document.getElementById('bankName').textContent = button.getAttribute('data-bank');
-                document.getElementById('accountNumber').textContent = button.getAttribute('data-account');
-                document.getElementById('beneficiary').textContent = button.getAttribute('data-beneficiary');
-                document.getElementById('referenceNumber').textContent = button.getAttribute('data-reference');
-            });
-        }
-    });
-
-    function toggleDescription(projectId) {
-        const shortDesc = document.getElementById(`short-description-${projectId}`);
-        const fullDesc = document.getElementById(`full-description-${projectId}`);
-        const toggleLink = document.getElementById(`toggle-link-${projectId}`);
-
-        if (shortDesc.style.display === 'none') {
-            shortDesc.style.display = 'inline';
-            fullDesc.style.display = 'none';
-            toggleLink.textContent = 'Read More';
-        } else {
-            shortDesc.style.display = 'none';
-            fullDesc.style.display = 'inline';
-            toggleLink.textContent = 'Read Less';
-        }
-    }
-</script>
-{% endblock %}
+    </script>
+    {% endblock %}

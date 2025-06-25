@@ -141,7 +141,7 @@ class DonationProofForm(forms.ModelForm):
         }
 
 
-from .models import RegularLevy
+from .models import RegularLevy, WellWishes
 
 class RegularLevyForm(forms.ModelForm):
     class Meta:
@@ -156,4 +156,12 @@ class RegularLevyForm(forms.ModelForm):
             'cda': forms.TextInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'proof_of_payment': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }
+
+class WellWishesForm(forms.ModelForm):
+    class Meta:
+        model = WellWishes
+        fields = ['celebrant', 'sender_name', 'message']
+        widgets = {
+            'celebrant': forms.HiddenInput(), # This will be set dynamically
         }

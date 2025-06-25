@@ -60,6 +60,57 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'Users'
 
 
+class ProjectDonationModal(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    image = models.ImageField(upload_to='project_donation_images/', blank=True, null=True)
+    button_link = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+
+class BirthdayCelebrant(models.Model):
+    name = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='celebrant_images/')
+    date_of_birth = models.DateField()
+    admin_wishes = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Birthday Celebrant"
+        verbose_name_plural = "Birthday Celebrants"
+
+
+class WellWishes(models.Model):
+    celebrant = models.ForeignKey(BirthdayCelebrant, on_delete=models.CASCADE, related_name='well_wishes')
+    sender_name = models.CharField(max_length=100)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Wish for {self.celebrant.name} from {self.sender_name}"
+
+    class Meta:
+        verbose_name = "Well Wish"
+        verbose_name_plural = "Well Wishes"
+        ordering = ['-created_at']
+        
+        
+class WellWishReply(models.Model):
+    wish = models.ForeignKey(WellWishes, on_delete=models.CASCADE, related_name='replies')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Well Wish Replies'
+    
+    def __str__(self):
+        return f"Reply to {self.wish.sender_name} by {self.sender.username}"
+
 class Levy(models.Model):
     CDA_CHOICES = [
         ('Unity CDA', 'Unity CDA'),

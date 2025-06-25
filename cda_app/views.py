@@ -10,16 +10,25 @@ from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
 from django.contrib import messages
 from .models import (
+    WellWishes,
     CDA, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
     Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, 
     CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, 
-    Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal
+    Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal, ProjectDonationModal,
+    BirthdayCelebrant
 )
+
+def get_project_donation_modal_context():
+    try:
+        modal_content = ProjectDonationModal.objects.first()
+    except ProjectDonationModal.DoesNotExist:
+        modal_content = None
+    return {'project_donation_modal': modal_content}
 
 from django.contrib.auth import get_user_model
 from .models import CustomUser
 """ from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm """
-from .forms import ( CustomUserCreationForm, CustomAuthenticationForm, AdvertItemForm, AdvertImageFormSet, DonationProofForm, RegularLevyForm)
+from .forms import ( CustomUserCreationForm, CustomAuthenticationForm, AdvertItemForm, AdvertImageFormSet, DonationProofForm, RegularLevyForm, WellWishesForm)
 
 from .utils import (
     send_registration_email, 
@@ -130,6 +139,7 @@ def home(request):
     left_image = NavbarImage.objects.filter(position='left').first()
     right_image = NavbarImage.objects.filter(position='right').first()
     project_donations = ProjectDonation.objects.all()
+    birthday_celebrants = BirthdayCelebrant.objects.all()
 
     context = {
         'executive_members': executive_members,
@@ -145,8 +155,44 @@ def home(request):
         'selected_cda': selected_cda,
         'selected_debt_for': selected_debt_for,
         'project_donations': ProjectDonation.objects.all().prefetch_related('images'),
+        'birthday_celebrants': birthday_celebrants,
     }
+    if request.method == 'POST':
+        sender_name = request.POST.get('sender_name')
+        message = request.POST.get('message')
+        celebrant_id = request.POST.get('celebrant_id')
+        
+        if sender_name and message and celebrant_id:
+            celebrant = get_object_or_404(BirthdayCelebrant, id=celebrant_id)
+            WellWishes.objects.create(
+                celebrant=celebrant,
+                sender_name=sender_name,
+                message=message
+            )
+            messages.success(request, 'Your well wish has been submitted!')
+            return redirect('home') # Redirect to the same page or a thank you page
+    else:
+        form = WellWishesForm()
+
+    context.update(get_project_donation_modal_context())
+    context['well_wishes_form'] = form
     return render(request, 'home.html', context)
+
+
+@login_required
+def reply_to_wish(request, wish_id):
+    wish = get_object_or_404(WellWishes, id=wish_id)
+    
+    if request.method == 'POST':
+        reply_message = request.POST.get('reply_message')
+        if reply_message:
+            # Here you could create a Reply model instance or handle it differently
+            # For now, we'll just show a success message
+            messages.success(request, f'Your reply to {wish.sender_name} has been sent.')
+            return redirect('home')
+    
+    messages.error(request, 'Invalid reply request')
+    return redirect('home')
 
 
 def register(request):

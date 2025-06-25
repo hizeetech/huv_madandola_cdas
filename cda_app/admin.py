@@ -8,8 +8,28 @@ from .models import (
     Event, CommunityInfo, Defaulter, NavbarImage, PaidMember,
     Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement,
     AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional,
-    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy
+    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes
 )
+
+@admin.register(ProjectDonationModal)
+class ProjectDonationModalAdmin(admin.ModelAdmin):
+    list_display = ('title', 'image', 'button_link')
+    search_fields = ('title', 'content')
+
+
+class BirthdayCelebrantAdmin(admin.ModelAdmin):
+    list_display = ('name', 'date_of_birth')
+    search_fields = ('name',)
+
+admin.site.register(BirthdayCelebrant, BirthdayCelebrantAdmin)
+
+class WellWishesAdmin(admin.ModelAdmin):
+    list_display = ('celebrant', 'sender_name', 'created_at')
+    list_filter = ('celebrant',)
+    search_fields = ('sender_name', 'message')
+
+admin.site.register(WellWishes, WellWishesAdmin)
+
 
 # Unregister default User model if registered
 from django.conf import settings

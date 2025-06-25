@@ -196,6 +196,7 @@ EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')  # Your Gmail address
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')  # Use App Password if 2FA is enabled
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')  # Same as EMAIL_HOST_USER
+ADMIN_EMAIL = env('ADMIN_EMAIL')
 
 
 AUTH_USER_MODEL = 'cda_app.CustomUser'
