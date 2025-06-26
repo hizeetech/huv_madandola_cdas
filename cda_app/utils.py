@@ -106,9 +106,11 @@ def send_payment_approved_email(levy):
     )
 
 def send_payment_rejected_email(levy):
-    subject = 'Payment Rejected'
+    subject = 'Payment Rejected - Action Required'
     html_message = render_to_string('emails/payment_rejected.html', {
-        'levy': levy
+        'user': levy.user,
+        'levy': levy,
+        'domain': settings.DOMAIN_NAME,
     })
     plain_message = strip_tags(html_message)
     send_mail(
@@ -118,3 +120,44 @@ def send_payment_rejected_email(levy):
         [levy.user.email],
         html_message=html_message,
     )
+
+def send_birthday_email(user):
+    subject = 'Happy Birthday from the Community Development Association!'
+    html_message = render_to_string('emails/birthday_alert.html', {
+        'user': user,
+        'domain': settings.DOMAIN_NAME,
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        html_message=html_message,
+    )
+
+def send_defaulter_email(user):
+    subject = 'Urgent: Outstanding Dues Reminder from CDA'
+    html_message = render_to_string('emails/defaulter_alert.html', {
+        'user': user,
+        'domain': settings.DOMAIN_NAME,
+        'login_url': f'http://{settings.DOMAIN_NAME}/login/', # Assuming a login URL
+    })
+    plain_message = strip_tags(html_message)
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        html_message=html_message,
+    )
+    
+    
+from .models import ProjectDonationModal
+
+def get_project_donation_modal_context():
+    try:
+        modal = ProjectDonationModal.objects.latest('id')
+        return {'project_donation_modal': modal}
+    except ProjectDonationModal.DoesNotExist:
+        return {}

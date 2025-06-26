@@ -1,5 +1,6 @@
 <!DOCTYPE html> {% load static %}
-<html lang="en">
+<html lang="en" data-theme="light">
+<!-- default is light -->
 
 <head>
     <meta charset="UTF-8">
@@ -26,6 +27,30 @@
             font-size: 1rem;
             margin: 0;
             padding: 0;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            z-index: 999;
+            background: #ddd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        [data-theme="dark"] .theme-toggle {
+            background: #444;
+            color: #fff;
         }
         
         .content-overlay {
@@ -303,6 +328,29 @@
         })();
     </script>
     <!--End of Tawk.to Script-->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+        <i class="fas fa-sun"></i>
+    </div>
+    <script>
+        function setTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("theme", theme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem("theme") || "light";
+            const newTheme = currentTheme === "light" ? "dark" : "light";
+            setTheme(newTheme);
+        }
+
+        // Apply saved theme on load
+        (function() {
+            const savedTheme = localStorage.getItem("theme") || "light";
+            setTheme(savedTheme);
+        })();
+    </script>
+
 </body>
 
 </html>

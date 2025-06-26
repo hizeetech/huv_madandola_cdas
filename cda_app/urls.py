@@ -39,4 +39,5 @@ urlpatterns = [
     path('project_donations/<int:donation_id>/upload_proof/', views.upload_donation_proof, name='upload_donation_proof'),
     path('executives/past/', views.past_executives, name='past_executives'),
     path('executives/present/', views.present_executives, name='present_executives'),
+    path('birthdays/', views.BirthdayCalendarView.as_view(), name='birthday_calendar'),
 ]

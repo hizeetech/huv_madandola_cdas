@@ -1,6 +1,9 @@
 from django.db.models import Q
+from django.db import models
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
+from datetime import date
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -31,11 +34,13 @@ from .models import CustomUser
 from .forms import ( CustomUserCreationForm, CustomAuthenticationForm, AdvertItemForm, AdvertImageFormSet, DonationProofForm, RegularLevyForm, WellWishesForm)
 
 from .utils import (
-    send_registration_email, 
+    send_registration_email,
     send_approval_email,
     send_advert_created_email,
     send_advert_approved_email,
-    send_donation_proof_email
+    send_donation_proof_email,
+    send_birthday_email,
+    send_defaulter_email
 )
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
@@ -116,30 +121,79 @@ def admin_reject_advert(request, advert_id):
     messages.success(request, f"Advert '{advert.title}' has been rejected and deleted.")
     return redirect('admin_advert_approval')
 
-# ... [keep all your existing views below this point] ...
 
+from django.db.models import Q
+from django.utils import timezone
+from .models import BirthdayCelebrant  # make sure it's imported
+from .utils import send_birthday_email, get_project_donation_modal_context
+from .forms import WellWishesForm
 
 def home(request):
+    today = timezone.now().date()
+
     executive_members = ExecutiveMember.objects.all()
     committees = Committee.objects.all()
     upcoming_events = Event.objects.all().order_by('date')
     community_info = CommunityInfo.objects.all().order_by('-published_date')
     defaulters = Defaulter.objects.all()
+    paid_members = PaidMember.objects.all().order_by('-payment_date')
+    left_image = NavbarImage.objects.filter(position='left').first()
+    right_image = NavbarImage.objects.filter(position='right').first()
+    project_donations = ProjectDonation.objects.all().prefetch_related('images')
 
     selected_cda = request.GET.get('cda', '').strip()
     selected_debt_for = request.GET.get('debt_for', '').strip()
 
     if selected_cda:
         defaulters = defaulters.filter(cda__iexact=selected_cda)
-
     if selected_debt_for:
         defaulters = defaulters.filter(title_defaulted__iexact=selected_debt_for)
 
-    paid_members = PaidMember.objects.all().order_by('-payment_date')
-    left_image = NavbarImage.objects.filter(position='left').first()
-    right_image = NavbarImage.objects.filter(position='right').first()
-    project_donations = ProjectDonation.objects.all()
-    birthday_celebrants = BirthdayCelebrant.objects.all()
+    # ✅ Always show celebrants whose birthday is today
+    birthday_celebrants = BirthdayCelebrant.objects.filter(
+        date_of_birth__month=today.month,
+        date_of_birth__day=today.day
+    )
+
+    # ➕ Show upcoming birthday countdown
+    next_birthday = BirthdayCelebrant.objects.exclude(
+        date_of_birth__month=today.month,
+        date_of_birth__day=today.day
+    ).order_by(
+        'date_of_birth__month', 'date_of_birth__day'
+    ).first()
+
+    days_until_next = None
+    if next_birthday:
+        next_date = next_birthday.date_of_birth.replace(year=today.year)
+        if next_date < today:
+            next_date = next_date.replace(year=today.year + 1)
+        days_until_next = (next_date - today).days
+
+    if request.method == 'POST':
+        sender_name = request.POST.get('sender_name')
+        message = request.POST.get('message')
+        celebrant_id = request.POST.get('celebrant_id')
+
+        if sender_name and message and celebrant_id:
+            celebrant = get_object_or_404(BirthdayCelebrant, id=celebrant_id)
+
+            WellWishes.objects.create(
+                celebrant=celebrant,
+                sender_name=sender_name,
+                message=message
+            )
+
+            # ✅ Send birthday email and mark as celebrated ONCE per day
+            if celebrant.user and celebrant.last_celebrated_year != today.year:
+                send_birthday_email(celebrant.user)
+                celebrant.last_celebrated_year = today.year
+                celebrant.save()
+
+            messages.success(request, 'Your well wish has been submitted and birthday email sent!')
+            return redirect('home')
+    else:
+        form = WellWishesForm()
 
     context = {
         'executive_members': executive_members,
@@ -154,28 +208,14 @@ def home(request):
         'debt_for_choices': Defaulter.debt_for_choices,
         'selected_cda': selected_cda,
         'selected_debt_for': selected_debt_for,
-        'project_donations': ProjectDonation.objects.all().prefetch_related('images'),
+        'project_donations': project_donations,
         'birthday_celebrants': birthday_celebrants,
+        'next_birthday': next_birthday,
+        'days_until_next': days_until_next,
+        'well_wishes_form': form,
     }
-    if request.method == 'POST':
-        sender_name = request.POST.get('sender_name')
-        message = request.POST.get('message')
-        celebrant_id = request.POST.get('celebrant_id')
-        
-        if sender_name and message and celebrant_id:
-            celebrant = get_object_or_404(BirthdayCelebrant, id=celebrant_id)
-            WellWishes.objects.create(
-                celebrant=celebrant,
-                sender_name=sender_name,
-                message=message
-            )
-            messages.success(request, 'Your well wish has been submitted!')
-            return redirect('home') # Redirect to the same page or a thank you page
-    else:
-        form = WellWishesForm()
 
     context.update(get_project_donation_modal_context())
-    context['well_wishes_form'] = form
     return render(request, 'home.html', context)
 
 
@@ -579,6 +619,28 @@ def present_executives(request):
         'title': 'Present Executive Members'
     }
     return render(request, 'executive_members.html', context)
+
+
+from django.views.generic import ListView
+from django.db.models.functions import ExtractMonth, ExtractDay
+
+class BirthdayCalendarView(ListView):
+    model = BirthdayCelebrant
+    template_name = 'birthday_calendar.html'
+    context_object_name = 'birthdays'
+    
+    def get_queryset(self):
+        return BirthdayCelebrant.objects.annotate(
+            month=ExtractMonth('date_of_birth'),
+            day=ExtractDay('date_of_birth')
+        ).order_by('month', 'day')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.now().date()
+        context['today_month'] = today.month
+        context['today_day'] = today.day
+        return context
 
 @login_required
 def upload_donation_proof(request, donation_id):

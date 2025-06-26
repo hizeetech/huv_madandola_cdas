@@ -17,11 +17,150 @@ class ProjectDonationModalAdmin(admin.ModelAdmin):
     search_fields = ('title', 'content')
 
 
+from django.contrib import admin
+from django.utils import timezone
+from .models import BirthdayCelebrant
+from .utils import send_birthday_email
+from django.utils.html import format_html
+
+from django.contrib.admin import SimpleListFilter
+
+class HasUserFilter(SimpleListFilter):
+    title = 'has user account'
+    parameter_name = 'has_user'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Has user account'),
+            ('no', 'No user account'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(user__isnull=False)
+        if self.value() == 'no':
+            return queryset.filter(user__isnull=True)
+        return queryset
+    
 class BirthdayCelebrantAdmin(admin.ModelAdmin):
-    list_display = ('name', 'date_of_birth')
-    search_fields = ('name',)
+    list_display = (
+        'celebrant_image',
+        'name', 
+        'user_link',
+        'formatted_date_of_birth',
+        'is_birthday_today', 
+        'last_celebrated_display',
+        'days_until_next_birthday'
+    )
+    search_fields = ('name', 'user__username', 'user__email')
+    list_filter = (
+    ('date_of_birth', admin.DateFieldListFilter),
+    HasUserFilter,
+    )
+    list_select_related = ('user',)
+    readonly_fields = (
+        'is_birthday_today',
+        'days_until_next_birthday',
+        'celebrant_image_preview'
+    )
+    actions = ['celebrate_birthday', 'send_test_email']
+    date_hierarchy = 'date_of_birth'
+    autocomplete_fields = ['user']
+    
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'name', 'image', 'celebrant_image_preview')
+        }),
+        ('Birthday Information', {
+            'fields': ('date_of_birth', 'admin_wishes')
+        }),
+        ('Celebration Status', {
+            'fields': ('is_birthday_today', 'days_until_next_birthday'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def celebrant_image(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 50px; max-width: 50px; border-radius: 50%;" />',
+                obj.image.url
+            )
+        return "-"
+    celebrant_image.short_description = "Image"
+
+    def celebrant_image_preview(self, obj):
+        return self.celebrant_image(obj)
+    celebrant_image_preview.short_description = "Image Preview"
+
+    def user_link(self, obj):
+        if obj.user:
+            url = f"/admin/{obj.user._meta.app_label}/{obj.user._meta.model_name}/{obj.user.pk}/"
+            return format_html('<a href="{}">{}</a>', url, obj.user.username)
+        return "-"
+    user_link.short_description = "User Account"
+    user_link.admin_order_field = 'user__username'
+
+    def formatted_date_of_birth(self, obj):
+        return obj.date_of_birth.strftime("%b %d, %Y")
+    formatted_date_of_birth.short_description = "Birth Date"
+    formatted_date_of_birth.admin_order_field = 'date_of_birth'
+
+    def last_celebrated_display(self, obj):
+        if obj.last_celebrated_year:
+            return f"{obj.last_celebrated_year} ({(timezone.now().year - obj.last_celebrated_year)} year(s) ago)"
+        return "Never"
+    last_celebrated_display.short_description = "Last Celebrated"
+
+    def days_until_next_birthday(self, obj):
+        today = timezone.now().date()
+        next_birthday = obj.date_of_birth.replace(year=today.year)
+        if next_birthday < today:
+            next_birthday = next_birthday.replace(year=today.year + 1)
+        return (next_birthday - today).days
+    days_until_next_birthday.short_description = "Days Until Next"
+
+    def is_birthday_today(self, obj):
+        return obj.is_birthday_today()
+    is_birthday_today.boolean = True
+    is_birthday_today.short_description = "Today?"
+
+    def celebrate_birthday(self, request, queryset):
+        today = timezone.now().date()
+        updated = queryset.update(last_celebrated_year=today.year)
+        
+        # Send birthday emails
+        sent_count = 0
+        for celebrant in queryset:
+            if celebrant.user:
+                send_birthday_email(celebrant.user)
+                sent_count += 1
+        
+        self.message_user(
+            request, 
+            f"Celebrated {updated} birthday(s). {sent_count} email(s) sent.",
+            level='SUCCESS' if sent_count == updated else 'WARNING'
+        )
+    celebrate_birthday.short_description = "🎉 Celebrate selected birthdays"
+
+    def send_test_email(self, request, queryset):
+        test_email = "test@example.com"  # Change to your test email
+        for celebrant in queryset:
+            send_birthday_email(celebrant.user or None, test_email=test_email)
+        self.message_user(
+            request,
+            f"Sent test emails to {test_email} for {queryset.count()} celebrant(s)",
+            level='INFO'
+        )
+    send_test_email.short_description = "✉️ Send test email"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Annotate with additional calculated fields if needed
+        return qs
 
 admin.site.register(BirthdayCelebrant, BirthdayCelebrantAdmin)
+
 
 class WellWishesAdmin(admin.ModelAdmin):
     list_display = ('celebrant', 'sender_name', 'created_at')
@@ -84,12 +223,26 @@ class EventAdmin(admin.ModelAdmin):
     search_fields = ('title', 'location')
     list_filter = ('date', 'location')
 
+from .utils import send_defaulter_email
+
 @admin.register(Defaulter)
 class DefaulterAdmin(admin.ModelAdmin):
     list_display = ('name', 'cda', 'amount_indebted', 'title_defaulted', 
                     'status', 'image')
     search_fields = ('name', 'cda', 'title_defaulted')
     list_filter = ('cda', 'status', 'title_defaulted')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        # Check if the defaulter is being created or updated to 'Indebt' status
+        if obj.status == 'Indebt':
+            # Attempt to find a CustomUser by phone number
+            user = CustomUser.objects.filter(phone_number=obj.phone_number).first()
+            if user:
+                send_defaulter_email(user)
+                messages.success(request, f"Defaulter email sent to {user.email}.")
+            else:
+                messages.warning(request, f"No user found with phone number {obj.phone_number}. Defaulter email not sent.")
 
 @admin.register(PaidMember)
 class PaidMemberAdmin(admin.ModelAdmin):

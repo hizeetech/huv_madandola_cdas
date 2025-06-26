@@ -3,6 +3,8 @@ from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
+from datetime import datetime, date
+""" import datetime """
 
 
 class CDA(models.Model):
@@ -70,13 +72,29 @@ class ProjectDonationModal(models.Model):
         return self.title
 
 class BirthdayCelebrant(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     image = models.ImageField(upload_to='celebrant_images/')
     date_of_birth = models.DateField()
     admin_wishes = models.TextField()
+    last_celebrated_year = models.IntegerField(null=True, blank=True, editable=False)
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        try:
+            if isinstance(self.last_celebrated_year, (datetime, date)):
+                self.last_celebrated_year = self.last_celebrated_year.year
+            elif isinstance(self.last_celebrated_year, str) and self.last_celebrated_year.isdigit():
+                self.last_celebrated_year = int(self.last_celebrated_year)
+        except Exception as e:
+            pass  # or log this
+        super().save(*args, **kwargs)
+
+    def is_birthday_today(self):
+        today = datetime.now().date()
+        return self.date_of_birth.month == today.month and self.date_of_birth.day == today.day
 
     class Meta:
         verbose_name = "Birthday Celebrant"

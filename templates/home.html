@@ -28,37 +28,11 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Modal display logic
-        var projectDonationModalElement = document.getElementById('projectDonationModal');
-        if (projectDonationModalElement) {
-            var myModal = new bootstrap.Modal(projectDonationModalElement, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            myModal.show();
-        }
-
-        // Intersection Observer for fade-in animation
-        const cards = document.querySelectorAll('.card');
-
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('fade-in');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, observerOptions);
-
-        cards.forEach(card => {
-            observer.observe(card);
+        var myModal = new bootstrap.Modal(document.getElementById('projectDonationModal'), {
+            backdrop: 'static',
+            keyboard: false
         });
+        myModal.show();
     });
 </script>
 {% endif %}
@@ -74,44 +48,6 @@
 </section>
 
 <!-- Main Content -->
-<style>
-    /* Fade-in animation for cards */
-    .card {
-        opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-    }
-
-    .card.fade-in {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    /* Scale-up effect on hover for interactive elements */
-    .paid-member-card,
-    .community-info-card,
-    .btn {
-        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-    }
-
-    .paid-member-card:hover,
-    .community-info-card:hover,
-    .btn:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Modal fade-in */
-    .modal.fade .modal-dialog {
-        transition: transform .3s ease-out;
-        transform: translateY(-50px);
-    }
-
-    .modal.show .modal-dialog {
-        transform: translateY(0);
-    }
-</style>
-
 <div class="container mt-3">
 
     <!-- Paid Members Section -->
@@ -316,11 +252,14 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow-sm mt-3">
-                        <div class="card-header bg-white py-2">
-                            <h2 class="h5 mb-0 text-center">Birthday Celebrant(s)</h2>
+                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                            <h2 class="h5 mb-0">Today's Birthday Celebrants</h2>
+                            <a href="{% url 'birthday_calendar' %}" class="btn btn-sm btn-outline-primary">
+                    View Birthday Calendar
+                </a>
                         </div>
                         <div class="card-body py-2">
-                            {% for celebrant in birthday_celebrants %}
+                            {% if birthday_celebrants %} {% for celebrant in birthday_celebrants %}
                             <div class="text-center mb-3">
                                 {% if celebrant.image %}
                                 <img src="{{ celebrant.image.url }}" class="rounded-circle shadow mb-1 border border-3 border-warning" alt="{{ celebrant.name }}" width="80" height="80"> {% endif %}
@@ -334,20 +273,6 @@
                                     <div class="mb-2 p-2 bg-white rounded">
                                         <p class="mb-0"><strong>{{ wish.sender_name }}:</strong> {{ wish.message }}</p>
                                         <small class="text-muted">{{ wish.created_at|date:"M d, Y H:i" }}</small>
-                                        <!-- Reply Button (toggle) -->
-                                        <button class="btn btn-sm btn-outline-secondary mt-1" data-bs-toggle="collapse" data-bs-target="#replyForm-{{ wish.id }}">
-                                        Reply
-                                    </button>
-                                        <!-- Reply Form (hidden by default) -->
-                                        <div id="replyForm-{{ wish.id }}" class="collapse mt-1">
-                                            <form method="post" action="{% url 'reply_to_wish' wish.id %}">
-                                                {% csrf_token %}
-                                                <div class="mb-1">
-                                                    <textarea name="reply_message" class="form-control form-control-sm" rows="2" placeholder="Your reply..."></textarea>
-                                                </div>
-                                                <button type="submit" class="btn btn-primary btn-sm">Send Reply</button>
-                                            </form>
-                                        </div>
                                     </div>
                                     {% empty %}
                                     <p class="text-center text-muted">No well wishes yet.</p>
@@ -356,8 +281,8 @@
 
                                 <!-- Send Well Wish Form -->
                                 <button class="btn btn-outline-primary btn-sm mt-2" data-bs-toggle="collapse" data-bs-target="#wishForm-{{ celebrant.id }}">
-                                Send Well Wish
-                            </button>
+                                    Send Well Wish
+                                </button>
 
                                 <div id="wishForm-{{ celebrant.id }}" class="collapse mt-2">
                                     <form method="post" action="{% url 'home' %}">
@@ -375,9 +300,16 @@
                                     </form>
                                 </div>
                             </div>
-                            {% empty %}
-                            <p class="text-center text-muted">No birthday celebrants today.</p>
-                            {% endfor %}
+                            {% endfor %} {% else %}
+                            <div class="text-center">
+                                <p class="text-muted">No birthdays today.</p>
+                                {% if next_birthday %}
+                                <div class="alert alert-info">
+                                    Next birthday: <strong>{{ next_birthday.name }}</strong> on {{ next_birthday.date_of_birth|date:"F d" }} (in {{ days_until_next }} day{{ days_until_next|pluralize }})
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -780,5 +712,39 @@
                 toggleLink.textContent = 'Read Less';
             }
         }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update countdown every second
+            function updateCountdown() {
+                const countdownElement = document.getElementById('next-birthday-countdown');
+                if (!countdownElement) return;
+
+                const days = parseInt(countdownElement.dataset.days);
+                if (isNaN(days)) return;
+
+                const now = new Date();
+                const targetDate = new Date(now);
+                targetDate.setDate(now.getDate() + days);
+
+                // Calculate time remaining
+                const diff = targetDate - now;
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownElement.innerHTML = `
+            ${days} day${days !== 1 ? 's' : ''}, 
+            ${hours} hour${hours !== 1 ? 's' : ''}, 
+            ${minutes} minute${minutes !== 1 ? 's' : ''}, 
+            ${seconds} second${seconds !== 1 ? 's' : ''}
+        `;
+            }
+
+            // Initial update and set interval
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        });
     </script>
     {% endblock %}

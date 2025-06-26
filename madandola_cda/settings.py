@@ -191,12 +191,14 @@ LOGOUT_REDIRECT_URL = 'home'  # Where to redirect after logout
 # Email Settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_PORT = env.int('EMAIL_PORT')
+EMAIL_PORT = env.int('EMAIL_PORT', default=465)
 EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')  # Your Gmail address
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')  # Use App Password if 2FA is enabled
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')  # Same as EMAIL_HOST_USER
-ADMIN_EMAIL = env('ADMIN_EMAIL')
 
 
 AUTH_USER_MODEL = 'cda_app.CustomUser'
+
+
+DOMAIN_NAME = os.getenv('DOMAIN_NAME', 'localhost:8000')
