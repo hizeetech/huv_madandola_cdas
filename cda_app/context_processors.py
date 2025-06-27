@@ -23,3 +23,26 @@ def admin_counts(request):
             'total_users_count': User.objects.count(),
         }
     return {}
+
+from .models import FooterSetting
+
+def footer_settings(request):
+    settings = FooterSetting.objects.first()
+    return {'footer_settings': settings}
+
+
+from .models import SocialMedia
+
+def social_links(request):
+    return {
+        'social_links': {item.platform: item.url for item in SocialMedia.objects.all()}
+    }
+    
+
+from .models import SocialMediaLinks, FooterText
+
+def global_footer_data(request):
+    return {
+        'social': SocialMediaLinks.objects.first(),
+        'footer_text': FooterText.objects.first().content if FooterText.objects.exists() else "Stay connected with us."
+    }

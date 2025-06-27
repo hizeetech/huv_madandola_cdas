@@ -3,6 +3,10 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 
+from django.utils import timezone
+
+from .models import ApprovalLog
+
 def send_registration_email(user):
     subject = 'Registration Submitted - Madandola Estate CDA'
     html_message = render_to_string('emails/registration_submitted.html', {
@@ -17,19 +21,55 @@ def send_registration_email(user):
         html_message=html_message,
     )
 
-def send_approval_email(user):
-    subject = 'Registration Approved - Madandola Estate CDA'
-    html_message = render_to_string('emails/registration_approved.html', {
-        'user': user,
-    })
-    plain_message = strip_tags(html_message)
-    send_mail(
-        subject,
-        plain_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        html_message=html_message,
-    )
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils import timezone
+import logging
+from .models import ApprovalLog
+
+import logging
+logger = logging.getLogger(__name__)
+
+def send_approval_email(user, admin_user=None):
+    """
+    Sends approval email to user, updates timestamp, and logs event.
+    """
+    try:
+        subject = 'Registration Approved - Madandola Estate CDA'
+        html_message = render_to_string('emails/registration_approved.html', {
+            'user': user,
+            'domain': getattr(settings, 'DOMAIN_NAME', 'https://madandolaestatecdas.com')
+        })
+        plain_message = strip_tags(html_message)
+
+        send_mail(
+            subject,
+            plain_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            html_message=html_message,
+            fail_silently=False
+        )
+
+        # ✅ Log and update if email sent successfully
+        user.last_approval_email_sent = timezone.now()
+        user.save(update_fields=['last_approval_email_sent'])
+
+        ApprovalLog.objects.create(
+            user=user,
+            email_sent_to=user.email,
+            sent_by=admin_user if admin_user else None
+        )
+
+        logger.info(f"Approval email sent to {user.email}")
+
+    except Exception as e:
+        logger.error(f"Failed to send approval email to {user.email}: {e}")
+
+
 
 def send_advert_created_email(advert):
     subject = 'Advert Created - Awaiting Approval'

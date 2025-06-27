@@ -4,6 +4,9 @@ from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.utils import timezone
 from datetime import datetime, date
+from django_ckeditor_5.fields import CKEditor5Field
+
+""" from ckeditor_uploader.fields import RichTextUploadingField """
 """ import datetime """
 
 
@@ -46,7 +49,7 @@ class CustomUser(AbstractUser):
     cda = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     is_approved = models.BooleanField(default=False)  # Add this field
-
+    last_approval_email_sent = models.DateTimeField(null=True, blank=True)
     objects = UserManager()
     
     def save(self, *args, **kwargs):
@@ -61,10 +64,24 @@ class CustomUser(AbstractUser):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
+class ApprovalLog(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='approval_logs')
+    email_sent_to = models.EmailField()
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='approval_emails_sent')
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-sent_at']
+        verbose_name = "Approval Email Log"
+        verbose_name_plural = "Approval Email Logs"
+
+    def __str__(self):
+        return f"Approval email to {self.email_sent_to} on {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+
 
 class ProjectDonationModal(models.Model):
-    title = models.CharField(max_length=200)
-    content = models.TextField()
+    title = CKEditor5Field(config_name='default', blank=True, null=True)
+    content = CKEditor5Field(config_name='default')
     image = models.ImageField(upload_to='project_donation_images/', blank=True, null=True)
     button_link = models.URLField(blank=True, null=True)
 
@@ -76,7 +93,7 @@ class BirthdayCelebrant(models.Model):
     name = models.CharField(max_length=200)
     image = models.ImageField(upload_to='celebrant_images/')
     date_of_birth = models.DateField()
-    admin_wishes = models.TextField()
+    admin_wishes = CKEditor5Field(config_name='default')
     last_celebrated_year = models.IntegerField(null=True, blank=True, editable=False)
 
     def __str__(self):
@@ -212,19 +229,20 @@ class Defaulter(models.Model):
         return f"{self.name} - {self.title_defaulted}"
 
 class Event(models.Model):
-    title = models.CharField(max_length=200)
+    title = CKEditor5Field(config_name='default', blank=True, null=True)
     date = models.DateField()
     time = models.CharField(max_length=50, blank=True, null=True)
     location = models.CharField(max_length=200)
-    description = models.TextField()
+    description = CKEditor5Field(config_name='default')
+    """ description = models.TextField() """
     image = models.ImageField(upload_to='event_images/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.title} on {self.date}"
 
 class CommunityInfo(models.Model):
-    title = models.CharField(max_length=200)
-    content = models.TextField()
+    title = CKEditor5Field(config_name='default', blank=True, null=True)
+    content = CKEditor5Field(config_name='default')
     published_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -270,8 +288,8 @@ class PaidMember(models.Model):
 
 class Committee(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    description = models.TextField(blank=True, null=True)
-    roles_responsibilities = models.TextField(blank=True, null=True)
+    description = CKEditor5Field(config_name='default', blank=True, null=True)
+    roles_responsibilities = CKEditor5Field(config_name='default', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -287,7 +305,7 @@ class CommitteeMember(models.Model):
 
 class CommitteeToDo(models.Model):
     committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name='todos')
-    task = models.CharField(max_length=255)
+    task = CKEditor5Field(config_name='default', blank=True, null=True)
     is_completed = models.BooleanField(default=False)
     due_date = models.DateField(blank=True, null=True)
 
@@ -296,8 +314,8 @@ class CommitteeToDo(models.Model):
 
 class CommitteeAchievement(models.Model):
     committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name='achievements')
-    title = models.CharField(max_length=255)
-    description = models.TextField()
+    title = CKEditor5Field(config_name='default', blank=True, null=True)
+    description = CKEditor5Field(config_name='default', blank=True, null=True)
     date = models.DateField(auto_now_add=True)
 
     def __str__(self):
@@ -310,8 +328,8 @@ class AdvertCategory(models.Model):
         return self.name
 
 class ProjectDonation(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
+    title = CKEditor5Field(config_name='default', blank=True, null=True)
+    description = CKEditor5Field(config_name='default', blank=True, null=True)
     estimated_cost = models.DecimalField(max_digits=15, decimal_places=2)
     reference_number = models.CharField(max_length=100, unique=True, blank=True, null=True)
     bank_name = models.CharField(max_length=100, blank=True, null=True)
@@ -580,3 +598,78 @@ class RegularLevy(models.Model):
         
         return (self.year < current_year) or \
                 (self.year == current_year and month_number < current_month)
+                
+                
+from django.db import models
+
+class FooterSetting(models.Model):
+    footer_text = models.TextField(help_text="Text to display in the footer")
+    facebook_url = models.URLField(blank=True, null=True)
+    instagram_url = models.URLField(blank=True, null=True)
+    twitter_url = models.URLField(blank=True, null=True)
+    tiktok_url = models.URLField(blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Footer Setting"
+        verbose_name_plural = "Footer Settings"
+
+    def __str__(self):
+        return "Footer Configuration"
+
+class SocialMedia(models.Model):
+    PLATFORM_CHOICES = [
+        ('facebook', 'Facebook'),
+        ('instagram', 'Instagram'),
+        ('twitter', 'Twitter (X)'),
+        ('tiktok', 'TikTok'),
+        ('linkedin', 'LinkedIn'),
+    ]
+    
+    platform = models.CharField(max_length=50, choices=PLATFORM_CHOICES, unique=True)
+    url = models.URLField()
+    
+    def __str__(self):
+        return f"{self.platform.title()}"
+
+    class Meta:
+        verbose_name = "Social Media Link"
+        verbose_name_plural = "Social Media Links"
+        
+        
+class SocialMediaLinks(models.Model):
+    facebook = models.URLField(blank=True, null=True)
+    instagram = models.URLField(blank=True, null=True)
+    twitter = models.URLField(blank=True, null=True)
+    tiktok = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return "Social Media Links"
+
+    class Meta:
+        verbose_name = "Social Media Link"
+        verbose_name_plural = "Social Media Links"
+
+
+class FooterText(models.Model):
+    content = models.TextField()
+
+    def __str__(self):
+        return "Footer Text"
+
+
+# models.py
+from django.db import models
+from django_ckeditor_5.fields import CKEditor5Field
+
+class SiteSettings(models.Model):
+    footer_text = CKEditor5Field(config_name='default')
+    facebook_url = models.URLField(blank=True, null=True)
+    instagram_url = models.URLField(blank=True, null=True)
+    twitter_url = models.URLField(blank=True, null=True)
+    tiktok_url = models.URLField(blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return "Site Settings"

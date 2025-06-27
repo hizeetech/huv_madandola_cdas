@@ -1,7 +1,20 @@
-from django.contrib import admin
+from django.db import models
 from django.contrib.auth.admin import UserAdmin
+from django_ckeditor_5.widgets import CKEditor5Widget
+from django_ckeditor_5.fields import CKEditor5Field
 """ from import_export.admin import ExportActionMixin """
 from django.utils.html import format_html
+from django.contrib import admin, messages
+from django.urls import path
+
+from django.utils import timezone
+from .models import BirthdayCelebrant
+from .utils import send_birthday_email
+
+from django.shortcuts import redirect, get_object_or_404
+from django.utils.timezone import localtime
+from .models import CustomUser, ApprovalLog
+from .utils import send_approval_email
 
 from .models import (
     CDA, Levy, UserLevy, Payment, ExecutiveMember,
@@ -13,18 +26,24 @@ from .models import (
 
 @admin.register(ProjectDonationModal)
 class ProjectDonationModalAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
     list_display = ('title', 'image', 'button_link')
     search_fields = ('title', 'content')
 
 
 from django.contrib import admin
-from django.utils import timezone
-from .models import BirthdayCelebrant
-from .utils import send_birthday_email
-from django.utils.html import format_html
+from .models import CommunityInfo
+from .forms import CommunityInfoForm
+
+@admin.register(CommunityInfo)
+class CommunityInfoAdmin(admin.ModelAdmin):
+    form = CommunityInfoForm
+    list_display = ['title', 'published_date']
+
 
 from django.contrib.admin import SimpleListFilter
-
 class HasUserFilter(SimpleListFilter):
     title = 'has user account'
     parameter_name = 'has_user'
@@ -159,7 +178,11 @@ class BirthdayCelebrantAdmin(admin.ModelAdmin):
         # Annotate with additional calculated fields if needed
         return qs
 
-admin.site.register(BirthdayCelebrant, BirthdayCelebrantAdmin)
+@admin.register(BirthdayCelebrant)
+class BirthdayCelebrantAdmin(BirthdayCelebrantAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
 
 
 class WellWishesAdmin(admin.ModelAdmin):
@@ -169,6 +192,11 @@ class WellWishesAdmin(admin.ModelAdmin):
 
 admin.site.register(WellWishes, WellWishesAdmin)
 
+@admin.register(CommitteeAchievement)
+class CommitteeAchievementAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
 
 # Unregister default User model if registered
 from django.conf import settings
@@ -178,21 +206,71 @@ from django.conf import settings
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 
-                    'phone_number', 'user_type', 'is_approved', 'is_active', 'is_staff')
+    list_display = (
+        'username', 'email', 'first_name', 'last_name', 
+        'phone_number', 'user_type', 'is_approved', 
+        'is_active', 'is_staff', 'last_approval_email_time', 'resend_email_button'
+    )
     list_filter = ('is_approved', 'user_type', 'is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'first_name', 'last_name', 'email', 'phone_number')
-    
+
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'phone_number', 
-                                    'user_type', 'cda', 'image', 'is_approved')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 
-                                'groups', 'user_permissions')}),
+        ('Personal info', {
+            'fields': ('first_name', 'last_name', 'email', 'phone_number', 
+                        'user_type', 'cda', 'image', 'is_approved', 'last_approval_email_sent')
+        }),
+        ('Permissions', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 
+                        'groups', 'user_permissions')
+        }),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
 
-# ... [keep all your other admin registrations below] ...
+    actions = ['resend_approval_email_action']
+
+    def last_approval_email_time(self, obj):
+        if obj.last_approval_email_sent:
+            return localtime(obj.last_approval_email_sent).strftime("%Y-%m-%d %H:%M")
+        return "-"
+    last_approval_email_time.short_description = "Last Approval Email Sent"
+
+    def resend_email_button(self, obj):
+        if obj.is_approved:
+            return format_html(
+                '<a class="button" href="resend-approval/{}/">Resend Email</a>',
+                obj.pk
+            )
+        return "-"
+    resend_email_button.short_description = "Resend Email"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('resend-approval/<int:user_id>/', self.admin_site.admin_view(self.resend_email_view)),
+        ]
+        return custom_urls + urls
+
+    def resend_email_view(self, request, user_id):
+        user = get_object_or_404(CustomUser, pk=user_id)
+        if user.is_approved:
+            send_approval_email(user, admin_user=request.user)
+            self.message_user(request, f"Approval email resent to {user.email}.", messages.SUCCESS)
+        else:
+            self.message_user(request, f"User '{user.username}' is not approved yet.", messages.WARNING)
+        return redirect(f'../../{user_id}/change/')
+
+    def resend_approval_email_action(self, request, queryset):
+        sent_count = 0
+        for user in queryset:
+            if user.is_approved:
+                send_approval_email(user, admin_user=request.user)
+                sent_count += 1
+        self.message_user(request, f"Resent approval emails to {sent_count} user(s).")
+    resend_approval_email_action.short_description = "Resend approval email to selected users"
+
+
+
 
 """ @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -219,6 +297,9 @@ class ExecutiveMemberAdmin(admin.ModelAdmin):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
     list_display = ('title', 'date', 'time', 'location', 'image')
     search_fields = ('title', 'location')
     list_filter = ('date', 'location')
@@ -281,7 +362,10 @@ class DonationProofInline(admin.TabularInline):
 
 @admin.register(ProjectDonation)
 class ProjectDonationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'estimated_cost', 'bank_name', 
+    formfield_overrides = {
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
+    list_display = ('title', 'estimated_cost', 'bank_name',
                     'account_number', 'beneficiary', 'reference_number')
     search_fields = ('title', 'bank_name', 'beneficiary')
     inlines = [ProjectImageInline, DonationProofInline]
@@ -388,18 +472,66 @@ class RegularLevyAdmin(admin.ModelAdmin):
         if obj and obj.status == 'paid':
             return [f.name for f in self.model._meta.fields] + ['proof_of_payment_preview', 'colored_status']
         return super().get_readonly_fields(request, obj)
+    
+    
+from django.contrib import admin
+from .models import FooterSetting
+
+@admin.register(FooterSetting)
+class FooterSettingAdmin(admin.ModelAdmin):
+    list_display = ['footer_text']
+
+
+from django.contrib import admin
+from .models import SocialMedia
+
+@admin.register(SocialMedia)
+class SocialMediaAdmin(admin.ModelAdmin):
+    list_display = ['platform', 'url']
+
+from .models import SocialMediaLinks, FooterText
+
+admin.site.register(SocialMediaLinks)
+admin.site.register(FooterText)
+
+
+from django.contrib import admin
+from django_ckeditor_5.widgets import CKEditor5Widget
+from django import forms
+from .models import SiteSettings, Committee
+
+class SiteSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = '__all__'
+        widgets = {
+            'footer_text': CKEditor5Widget(config_name='default'),
+        }
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    form = SiteSettingsForm
+
 
 # Simple model registrations
 admin.site.register(CDA)
 admin.site.register(Levy)
 admin.site.register(UserLevy)
 admin.site.register(Payment)
-admin.site.register(CommunityInfo)
+# admin.site.register(CommunityInfo)
 admin.site.register(NavbarImage)
-admin.site.register(Committee)
+@admin.register(Committee)
+class CommitteeAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+    }
 admin.site.register(CommitteeMember)
-admin.site.register(CommitteeToDo)
-admin.site.register(CommitteeAchievement)
+@admin.register(CommitteeToDo)
+class CommitteeToDoAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
+
 admin.site.register(AdvertCategory)
 admin.site.register(AdvertImage)
 admin.site.register(ProjectImage)

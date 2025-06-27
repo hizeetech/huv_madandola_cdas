@@ -6,8 +6,7 @@ from datetime import date
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
+
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
@@ -20,6 +19,12 @@ from .models import (
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal, ProjectDonationModal,
     BirthdayCelebrant
 )
+
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+
+from .models import CustomUser
+from .utils import send_approval_email
 
 def get_project_donation_modal_context():
     try:
@@ -512,6 +517,14 @@ def pay_levy(request, levy_id):
     return redirect('profile')
 
 
+@staff_member_required
+def resend_approval_email_admin(request, user_id):
+    user = get_object_or_404(CustomUser, pk=user_id)
+    send_approval_email(user, admin_user=request.user)
+    messages.success(request, f"Approval email resent to {user.username}.")
+    return redirect(f"/admin/cda_app/customuser/{user_id}/change/")
+
+
 def advert_list(request):
     category_name = request.GET.get('category')
     user_filter = request.GET.get('user')
@@ -601,7 +614,7 @@ def professionals_list(request):
 
 @login_required
 def project_donations_list(request):
-    project_donations = ProjectDonation.objects.all()
+    project_donations = ProjectDonation.objects.all().prefetch_related('images')
     return render(request, 'project_donations_list.html', {'project_donations': project_donations})
 
 def past_executives(request):
@@ -637,6 +650,11 @@ class BirthdayCalendarView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        birthdays = self.get_queryset()
+        birthdays_by_month = {month: [] for month in range(1, 13)}
+        for birthday in birthdays:
+            birthdays_by_month[birthday.month].append(birthday)
+        context['birthdays_by_month'] = birthdays_by_month
         today = timezone.now().date()
         context['today_month'] = today.month
         context['today_day'] = today.day

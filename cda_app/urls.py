@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin-portal/adverts/', views.admin_advert_approval, name='admin_advert_approval'),
     path('admin-portal/adverts/approve/<int:advert_id>/', views.admin_approve_advert, name='admin_approve_advert'),
     path('admin-portal/adverts/reject/<int:advert_id>/', views.admin_reject_advert, name='admin_reject_advert'),
+    path('admin/resend-approval-email/<int:user_id>/', views.resend_approval_email_admin, name='resend_approval_email'),
     
     # Authentication URLs
     path('login/', views.user_login, name='login'),

@@ -1,4 +1,6 @@
 from django import forms
+from .models import CommunityInfo
+
 from django.forms import inlineformset_factory
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
 from .models import CustomUser, CDA, AdvertItem, AdvertImage, AdvertMessage, DonationProof
@@ -164,4 +166,32 @@ class WellWishesForm(forms.ModelForm):
         fields = ['celebrant', 'sender_name', 'message']
         widgets = {
             'celebrant': forms.HiddenInput(), # This will be set dynamically
+        }
+        
+
+from django_ckeditor_5.widgets import CKEditor5Widget
+
+class MyForm(forms.ModelForm):
+    content = forms.CharField(widget=CKEditor5Widget(config_name='default'))
+
+
+class CommunityInfoForm(forms.ModelForm):
+    class Meta:
+        model = CommunityInfo
+        fields = '__all__'
+        widgets = {
+            'title': CKEditor5Widget(config_name='default'),
+            'content': CKEditor5Widget(config_name='default'),
+        }
+
+from django import forms
+from django_ckeditor_5.widgets import CKEditor5Widget
+from .models import SiteSettings
+
+class SiteSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = '__all__'
+        widgets = {
+            'footer_text': CKEditor5Widget(config_name='default'),
         }

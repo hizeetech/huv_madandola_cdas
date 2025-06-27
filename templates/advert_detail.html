@@ -41,7 +41,7 @@
                     </div>
 
                     <h4 class="mt-4">Description</h4>
-                    <p>{{ advert_item.description }}</p>
+                    <p>{{ advert_item.description|safe }}</p>
 
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item"><strong>Amount:</strong> &#8358;{{ advert_item.amount|intcomma }}</li>

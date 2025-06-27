@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +46,8 @@ INSTALLED_APPS = [
     'cda_app',
     'widget_tweaks',
     'captcha',
+    'django_ckeditor_5',
+    #'ckeditor_uploader',
 ]
 
 RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY')
@@ -73,7 +76,11 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'cda_app.context_processors.committees',
-                'cda_app.context_processors.admin_counts',  # Add this line
+                'cda_app.context_processors.admin_counts',
+                'cda_app.context_processors.social_links',
+                'cda_app.context_processors.footer_settings',
+                'cda_app.context_processors.global_footer_data',
+                
             ],
         },
     },
@@ -130,7 +137,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'GMT'
 
 USE_I18N = True
 
@@ -164,6 +171,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'payment_proofs'), exist_ok=True)
+
+# CKEditor upload path
+CKEDITOR_UPLOAD_PATH = 'uploads/'
 
 # settings.py
 FILE_UPLOAD_PERMISSIONS = 0o644
@@ -202,3 +212,71 @@ AUTH_USER_MODEL = 'cda_app.CustomUser'
 
 
 DOMAIN_NAME = os.getenv('DOMAIN_NAME', 'localhost:8000')
+EMAIL_SUBJECT_PREFIX = '[Madandola Estate CDA] '
+
+# Optional: Customize toolbar with full styling
+""" CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Full',
+        'height': 400,
+        'width': '100%',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList'],
+            ['Blockquote'],
+            ['Link', 'Unlink'],
+            ['Image', 'Table'],
+            ['RemoveFormat', 'Source'],
+        ],
+        'extraPlugins': ','.join([
+            'uploadimage', 'image2', 'table', 'blockquote', 'embed', 'autogrow'  # enable uploading images
+        ]),
+    },
+} """
+
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList',
+            'blockQuote', '|', 'insertTable', 'mediaEmbed', '|', 'undo', 'redo'
+        ],
+        'language': 'en',
+    },
+}
+
+JJAZZMIN_SETTINGS = {
+    "site_title": "Madandola Estate Admin",
+    "site_header": "Madandola Estate Admin",
+    "site_brand": "Madandola Estate CDA",
+    "site_logo": "logo/madandola_logo.png",  # path relative to static/
+    "login_logo": "logo/madandola_logo.png",
+    "login_logo_dark": "logo/madandola_logo.png",
+    "site_logo_classes": "img-circle",  # optional styling
+    "welcome_sign": "Welcome to Madandola Estate Admin",
+    "site_icon": "images/favicon.ico",
+
+    "brand_colors": {
+        "primary": "#198754",  # Bootstrap green or your preferred brand color
+        "accent": "#343a40",
+    },
+    # Optional: custom top bar and sidebar colors
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+    ],
+
+    "icons": {
+        "auth.User": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        # Add your own icons for models if needed
+    },
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "order_with_respect_to": ["auth", "cda_app"],
+
+    # Add custom CSS if needed
+    "custom_css": None,
+    "custom_js": None,
+}

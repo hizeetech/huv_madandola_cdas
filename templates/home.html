@@ -1,4 +1,63 @@
-{% extends 'base.html' %} {% load humanize %} {% load static %} {% load batch_filter %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block content %}
+{% extends 'base.html' %} {% load humanize %} {% load static %} {% load batch_filter %} {% block title %}Home - Madandola Estate CDA{% endblock %} {% block extra_js %}
+<script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
+<script>
+    function toggleDescription(projectId) {
+        var shortDesc = document.getElementById('short-description-' + projectId);
+        var fullDesc = document.getElementById('full-description-' + projectId);
+        var toggleLink = document.getElementById('toggle-link-' + projectId);
+
+        if (fullDesc.style.display === 'none') {
+            shortDesc.style.display = 'none';
+            fullDesc.style.display = 'inline';
+            toggleLink.innerText = 'Read Less';
+        } else {
+            shortDesc.style.display = 'inline';
+            fullDesc.style.display = 'none';
+            toggleLink.innerText = 'Read More';
+        }
+    }
+
+    let panzoomInstance;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const imageModal = document.getElementById('imageModal');
+        const donateModal = document.getElementById('donateModal');
+
+        imageModal.addEventListener('show.bs.modal', function(event) {
+            const trigger = event.relatedTarget;
+            const imageUrl = trigger.getAttribute('data-bs-src');
+            const modalImage = document.getElementById('modalImage');
+
+            modalImage.src = imageUrl;
+
+            modalImage.onload = function() {
+                if (panzoomInstance) panzoomInstance.destroy();
+                panzoomInstance = Panzoom(modalImage, {
+                    maxScale: 5,
+                    contain: 'outside',
+                });
+                modalImage.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+            };
+        });
+
+        imageModal.addEventListener('hidden.bs.modal', function() {
+            if (panzoomInstance) {
+                panzoomInstance.destroy();
+                panzoomInstance = null;
+            }
+        });
+
+        donateModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('projectTitle').innerText = button.getAttribute('data-title');
+            document.getElementById('bankName').innerText = button.getAttribute('data-bank');
+            document.getElementById('accountNumber').innerText = button.getAttribute('data-account');
+            document.getElementById('beneficiary').innerText = button.getAttribute('data-beneficiary');
+            document.getElementById('referenceNumber').innerText = button.getAttribute('data-reference');
+        });
+    });
+</script>
+{% endblock extra_js %} {% block content %}
 <!-- Project Donation Modal (if needed) -->
 {% if project_donation_modal %}
 <div class="modal fade" id="projectDonationModal" tabindex="-1" aria-labelledby="projectDonationModalLabel" aria-hidden="true">
@@ -88,13 +147,15 @@
         <div class="col-12">
             <div class="card shadow-sm mt-3">
                 <div class="card-header bg-white py-2">
-                    <h2 class="h5 mb-0">Community Information</h2>
+                    <h2 class="card-header bg-primary text-white">Community Information</h2>
                 </div>
                 <div class="card-body py-2">
                     {% for info in community_info %}
                     <div class="community-info-card mb-2 p-2 bg-light rounded">
                         <h5 class="card-title text-primary">{{ info.title }}</h5>
-                        <p class="card-text">{{ info.content }}</p>
+                        <div class="rich-content">
+                            {{ info.content|safe }}
+                        </div>
                         <small class="text-muted">Published: {{ info.published_date|date:"M d, Y" }}</small>
                     </div>
                     {% empty %}
@@ -111,7 +172,7 @@
     <div class="col-12">
         <div class="card shadow-sm mt-3">
             <div class="card-header bg-white py-2">
-                <h2 class="h5 mb-0">Project Donations</h2>
+                <h2 class="card-header bg-primary text-white">Project Donations</h2>
             </div>
             <div class="card-body py-2">
                 {% if project_donations %}
@@ -124,6 +185,7 @@
                                 <th>Description</th>
                                 <th>Reference</th>
                                 <th>Estimated Cost</th>
+                                <th>Images</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -140,6 +202,14 @@
                                 <td>{{ project.reference_number }}</td>
                                 <td>₦{{ project.estimated_cost|floatformat:2|intcomma }}</td>
                                 <td>
+                                    {% for image in project.images.all %}
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-src="{{ image.image.url }}">
+                                        <img src="{{ image.image.url }}" alt="Project Image" width="50" height="50" class="img-thumbnail m-1">
+                                    </a>
+                                    {% empty %} No Images {% endfor %}
+                                </td>
+                                <td>
+
                                     <div class="d-flex flex-wrap gap-1">
                                         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
                                                 <i class="fas fa-donate"></i> Donate
@@ -177,7 +247,7 @@
                                     {% for member in group %}
                                     <div class="text-center mx-1 mb-2">
                                         {% if member.image %}
-                                        <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle mb-1 shadow" width="80" height="80"> {% endif %}
+                                        <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle mb-1 shadow" width="150" height="150"> {% endif %}
                                         <h5 class="text-center"><b>{{ member.name }}</b></h5>
                                         <p class="text-center text-primary"><strong>{{ member.position }}</strong></p>
                                         {% if member.phone_number %}
@@ -208,7 +278,7 @@
             <div class="col-12">
                 <div class="card shadow-sm mt-3">
                     <div class="card-header bg-white py-2">
-                        <h2 class="h5 mb-0">Upcoming Events</h2>
+                        <h2 class="card-header bg-primary text-white">Upcoming Events</h2>
                     </div>
                     <div class="card-body py-2">
                         {% if upcoming_events %}
@@ -222,7 +292,7 @@
                                         <img src="{% static 'images/default_event.png' %}" class="card-img-top rounded" alt="Default Event Image"> {% endif %}
                                         <div class="card-body p-2">
                                             <h5 class="card-title">{{ event.title }}</h5>
-                                            <p class="card-text text-muted">{{ event.description|truncatechars:100 }}</p>
+                                            <p class="card-text text-muted">{{ event.description|truncatechars:100|safe }}</p>
                                             <div class="d-flex justify-content-between small text-muted">
                                                 <span><i class="far fa-calendar-alt me-1"></i> {{ event.date|date:"M d, Y" }}</span>
                                                 <span><i class="far fa-clock me-1"></i> {{ event.time|time:"h:i A" }}</span>
@@ -253,7 +323,7 @@
                 <div class="col-12">
                     <div class="card shadow-sm mt-3">
                         <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                            <h2 class="h5 mb-0">Today's Birthday Celebrants</h2>
+                            <h2 class="card-header bg-primary text-white">Today's Birthday Celebrants</h2>
                             <a href="{% url 'birthday_calendar' %}" class="btn btn-sm btn-outline-primary">
                     View Birthday Calendar
                 </a>
@@ -262,7 +332,7 @@
                             {% if birthday_celebrants %} {% for celebrant in birthday_celebrants %}
                             <div class="text-center mb-3">
                                 {% if celebrant.image %}
-                                <img src="{{ celebrant.image.url }}" class="rounded-circle shadow mb-1 border border-3 border-warning" alt="{{ celebrant.name }}" width="80" height="80"> {% endif %}
+                                <img src="{{ celebrant.image.url }}" class="rounded-circle shadow mb-1 border border-3 border-warning" alt="{{ celebrant.name }}" width="150" height="150"> {% endif %}
                                 <h5>{{ celebrant.name }}</h5>
                                 <p class="text-muted">{{ celebrant.admin_wishes }}</p>
 
@@ -319,7 +389,7 @@
         <!-- Defaulters/Owing Members -->
         <div class="card shadow-sm mt-3">
             <div class="card-header bg-white py-2">
-                <h2 class="h5 mb-0">Defaulters/Owing Members</h2>
+                <h2 class="card-header bg-primary text-white">Defaulters/Owing Members</h2>
             </div>
             <div class="card-body py-2">
                 <div class="alert alert-warning py-2">
@@ -369,7 +439,7 @@
                             <tr>
                                 <td>
                                     {% if defaulter.image %}
-                                    <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" class="rounded-circle" width="40" height="40"> {% else %}
+                                    <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" class="rounded-circle" width="60" height="60"> {% else %}
                                     <span class="text-muted">N/A</span> {% endif %}
                                 </td>
                                 <td>{{ defaulter.name }}</td>
@@ -390,59 +460,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <!-- Zoom Image Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Image Preview</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <img src="" id="modalImage" class="img-fluid rounded" alt="Zoom Image">
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Donate Modal -->
-    <div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="donateModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="donateModalLabel">Donation Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h5 id="projectTitle" class="text-success mb-2"></h5>
-                    <div class="list-group mb-2">
-                        <div class="list-group-item py-2">
-                            <strong>Bank Name:</strong> <span id="bankName" class="float-end"></span>
-                        </div>
-                        <div class="list-group-item py-2">
-                            <strong>Account Number:</strong> <span id="accountNumber" class="float-end"></span>
-                        </div>
-                        <div class="list-group-item py-2">
-                            <strong>Beneficiary:</strong> <span id="beneficiary" class="float-end"></span>
-                        </div>
-                        <div class="list-group-item py-2">
-                            <strong>Reference Number:</strong> <span id="referenceNumber" class="float-end"></span>
-                        </div>
-                    </div>
-                    <div class="alert alert-info py-2">
-                        Please use the above details to make your donation. Thank you for supporting this project!
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
-                    <i class="fas fa-print me-1"></i> Print Details
-                </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <style>
          :root {
@@ -513,6 +531,23 @@
         .well-wishes-container {
             max-height: 200px;
             overflow-y: auto;
+        }
+        
+        .rich-content p {
+            margin-bottom: 1em;
+        }
+        
+        .rich-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+        
+        .rich-content blockquote {
+            padding: 0.75em 1em;
+            background: #f9f9f9;
+            border-left: 5px solid #ccc;
+            margin: 1em 0;
         }
         /* Animations */
         
@@ -747,4 +782,43 @@
             setInterval(updateCountdown, 1000);
         });
     </script>
+    <!-- Zoom Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content bg-dark text-white border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Zoom Image</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 m-0 d-flex justify-content-center align-items-center" style="overflow: hidden;">
+                    <div id="panzoom-container" class="w-100 h-100 d-flex justify-content-center align-items-center" style="overflow: hidden;">
+                        <img src="" id="modalImage" class="img-fluid" style="cursor: grab; max-width: none;" alt="Zoom Image">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Donate Modal -->
+    <div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="donateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="donateModalLabel">Donation Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h5 id="projectTitle" class="text-success mb-3"></h5>
+                    <p><strong>Bank Name:</strong> <span id="bankName"></span></p>
+                    <p><strong>Account Number:</strong> <span id="accountNumber"></span></p>
+                    <p><strong>Beneficiary:</strong> <span id="beneficiary"></span></p>
+                    <p><strong>Reference Number:</strong> <span id="referenceNumber"></span></p>
+                    <div class="alert alert-info mt-3">
+                        Please use the above details to make your donation. Thank you for supporting this project!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endblock %}
