@@ -37,6 +37,10 @@ urlpatterns = [
     path('proposals/', views.proposal_list, name='proposal_list'),
     path('artisans/', views.artisans_list, name='artisans_list'),
     path('professionals/', views.professionals_list, name='professionals_list'),
+    path('artisans/<int:artisan_id>/gallery/', views.artisan_gallery_view, name='artisan_gallery'),
+    path('professionals/<int:professional_id>/gallery/', views.professional_gallery_view, name='professional_gallery'),
+    
+    
     path('project_donations/', views.project_donations_list, name='project_donations_list'),
     path('project_donations/<int:donation_id>/upload_proof/', views.upload_donation_proof, name='upload_donation_proof'),
     path('executives/past/', views.past_executives, name='past_executives'),

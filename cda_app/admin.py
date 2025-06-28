@@ -20,8 +20,9 @@ from .models import (
     CDA, Levy, UserLevy, Payment, ExecutiveMember,
     Event, CommunityInfo, Defaulter, NavbarImage, PaidMember,
     Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement,
-    AdvertCategory, AdvertItem, AdvertImage, Artisan, Professional,
-    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes
+    AdvertCategory, AdvertItem, AdvertImage,
+    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes,
+    Artisan, ArtisanImage, Professional, ProfessionalImage # Import new image models and updated Artisan/Professional
 )
 
 @admin.register(ProjectDonationModal)
@@ -378,29 +379,106 @@ class ProjectDonationAdmin(admin.ModelAdmin):
     search_fields = ('title', 'bank_name', 'beneficiary')
     inlines = [ProjectImageInline, DonationProofInline]
 
+# Inline for Artisan Images
+class ArtisanImageInline(admin.TabularInline):
+    model = ArtisanImage
+    extra = 1 # Number of empty forms to display
+    fields = ('image', 'description')
+    # Optional: If you want to show a preview of the image in the admin inline
+    # readonly_fields = ('image_preview',)
+    # def image_preview(self, obj):
+    #     if obj.image:
+    #         return format_html('<img src="{}" width="100" height="auto" />', obj.image.url)
+    #     return "No Image"
+    # image_preview.short_description = "Image Preview"
+
+
 @admin.register(Artisan)
 class ArtisanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'job_title', 'phone_number', 'display_image')
-    search_fields = ('name', 'job_title')
+    list_display = (
+        'name', 'job_title', 'phone_number', 'email', 'location',
+        'rating', 'num_reviews', 'display_image'
+    )
+    search_fields = ('name', 'job_title', 'location', 'email', 'business_description', 'products_services')
+    list_filter = ('job_title', 'location', 'rating')
+    inlines = [ArtisanImageInline] # Add the inline for gallery images
+    
+    # Use CKEditor for rich text fields
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
+
+    fieldsets = (
+        (None, {
+            'fields': ('image', 'name', 'job_title', 'phone_number', 'email')
+        }),
+        ('Business Details', {
+            'fields': ('location', 'business_description', 'products_services', 'working_hours')
+        }),
+        ('Rating Information', {
+            'fields': ('rating', 'num_reviews'),
+            'description': 'These fields are typically updated by reviews, not manually.'
+        }),
+    )
 
     def display_image(self, obj):
         if obj.image:
-            return format_html('<img src="{}" width="50" height="50" />', 
+            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px; object-fit: cover; border-radius: 5px;" />',
                             obj.image.url)
         return "No Image"
-    display_image.short_description = "Image"
+    display_image.short_description = "Profile Image"
+
+
+# Inline for Professional Images
+class ProfessionalImageInline(admin.TabularInline):
+    model = ProfessionalImage
+    extra = 1
+    fields = ('image', 'description')
+    # Optional: If you want to show a preview of the image in the admin inline
+    # readonly_fields = ('image_preview',)
+    # def image_preview(self, obj):
+    #     if obj.image:
+    #         return format_html('<img src="{}" width="100" height="auto" />', obj.image.url)
+    #     return "No Image"
+    # image_preview.short_description = "Image Preview"
+
 
 @admin.register(Professional)
 class ProfessionalAdmin(admin.ModelAdmin):
-    list_display = ('name', 'job_title', 'phone_number', 'display_image')
-    search_fields = ('name', 'job_title')
+    list_display = (
+        'name', 'job_title', 'phone_number', 'email', 'location',
+        'rating', 'num_reviews', 'display_image'
+    )
+    search_fields = ('name', 'job_title', 'location', 'email', 'business_description', 'products_services')
+    list_filter = ('job_title', 'location', 'rating')
+    inlines = [ProfessionalImageInline] # Add the inline for gallery images
+
+    # Use CKEditor for rich text fields
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditor5Widget(config_name='default')},
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
+
+    fieldsets = (
+        (None, {
+            'fields': ('image', 'name', 'job_title', 'phone_number', 'email')
+        }),
+        ('Business Details', {
+            'fields': ('location', 'business_description', 'products_services', 'working_hours')
+        }),
+        ('Rating Information', {
+            'fields': ('rating', 'num_reviews'),
+            'description': 'These fields are typically updated by reviews, not manually.'
+        }),
+    )
 
     def display_image(self, obj):
         if obj.image:
-            return format_html('<img src="{}" width="50" height="50" />', 
+            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px; object-fit: cover; border-radius: 5px;" />',
                             obj.image.url)
         return "No Image"
-    display_image.short_description = "Image"
+    display_image.short_description = "Profile Image"
 
 # cda_app/admin.py
 from django.contrib import admin

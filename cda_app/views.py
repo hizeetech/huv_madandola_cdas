@@ -14,11 +14,12 @@ from django.contrib import messages
 from .models import CommunityPolicy
 from .models import (
     WellWishes,
-    CDA, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
-    Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember, 
-    CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage, 
+    CDA, Levy, UserLevy, Payment, ExecutiveMember, Defaulter,
+    Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember,
+    CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage,
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal, ProjectDonationModal,
-    BirthdayCelebrant
+    BirthdayCelebrant,
+    ArtisanImage, ProfessionalImage # Ensure these are imported if used directly, though prefetch_related is usually enough
 )
 
 from django.shortcuts import redirect, get_object_or_404
@@ -613,13 +614,49 @@ def create_advert(request):
 
 @login_required
 def artisans_list(request):
-    artisans = Artisan.objects.all()
-    return render(request, 'artisans_list.html', {'artisans': artisans})
+    # Prefetch gallery_images to reduce database queries
+    artisans = Artisan.objects.all().prefetch_related('gallery_images')
+    context = {
+        'artisans': artisans
+    }
+    return render(request, 'artisans_list.html', context)
 
 @login_required
 def professionals_list(request):
-    professionals = Professional.objects.all()
-    return render(request, 'professionals_list.html', {'professionals': professionals})
+    # Prefetch gallery_images to reduce database queries
+    professionals = Professional.objects.all().prefetch_related('gallery_images')
+    context = {
+        'professionals': professionals
+    }
+    return render(request, 'professionals_list.html', context)
+
+""" @login_required
+def artisan_gallery_view(request, artisan_id):
+    artisan = get_object_or_404(Artisan.objects.prefetch_related('gallery_images'), pk=artisan_id)
+    return render(request, 'artisan_gallery.html', {'artisan': artisan}) """
+
+""" @login_required
+def professional_gallery_view(request, professional_id):
+    professional = get_object_or_404(Professional.objects.prefetch_related('gallery_images'), pk=professional_id)
+    return render(request, 'professional_gallery.html', {'professional': professional}) """
+
+@login_required
+def artisan_gallery_view(request, artisan_id):
+    # Prefetch gallery images to load them efficiently
+    artisan = get_object_or_404(Artisan.objects.prefetch_related('gallery_images'), pk=artisan_id)
+    context = {
+        'artisan': artisan
+    }
+    return render(request, 'artisan_gallery.html', context)
+
+@login_required
+def professional_gallery_view(request, professional_id):
+    # Prefetch gallery images to load them efficiently
+    professional = get_object_or_404(Professional.objects.prefetch_related('gallery_images'), pk=professional_id)
+    context = {
+        'professional': professional
+    }
+    return render(request, 'professional_gallery.html', context)
 
 @login_required
 def project_donations_list(request):

@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import datetime, date
 from django_ckeditor_5.fields import CKEditor5Field
 
+
 """ from ckeditor_uploader.fields import RichTextUploadingField """
 """ import datetime """
 
@@ -409,22 +410,116 @@ class AdvertMessage(models.Model):
         return f"Message for {self.advert.title} from {self.name}"
 
 class Artisan(models.Model):
-    image = models.ImageField(upload_to='artisans/', blank=True, null=True)
-    name = models.CharField(max_length=100)
-    job_title = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    # Core Information
+    image = models.ImageField(upload_to='artisans/', blank=True, null=True,
+                            help_text="Upload a main profile picture for the artisan.")
+    name = models.CharField(max_length=100,
+                            help_text="Full name of the artisan.")
+    job_title = models.CharField(max_length=100,
+                                help_text="e.g., Plumber, Electrician, Carpenter.")
+    
+    # Contact Information
+    phone_number = models.CharField(max_length=20, blank=True, null=True,
+                                    help_text="Primary phone number for contact.")
+    email = models.EmailField(blank=True, null=True,
+                            help_text="Email address for business inquiries.")
+    
+    # Business Details
+    location = models.CharField(max_length=200, blank=True, null=True,
+                                help_text="Physical location or service area.")
+    business_description = CKEditor5Field(config_name='default', blank=True, null=True,
+                                            help_text="A brief description of their business.")
+    products_services = CKEditor5Field(config_name='default', blank=True, null=True,
+                                        help_text="Detailed list of products/services offered.")
+    working_hours = models.CharField(max_length=200, blank=True, null=True,
+                                    help_text="e.g., Mon-Fri: 9 AM - 5 PM, Sat: 10 AM - 2 PM.")
+    
+    # Rating and Reviews (for star preview)
+    rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0,
+                                help_text="Average rating based on reviews (e.g., 4.5).")
+    num_reviews = models.IntegerField(default=0,
+                                        help_text="Total number of reviews received.")
+
+    class Meta:
+        verbose_name = "Artisan"
+        verbose_name_plural = "Artisans"
+        ordering = ['name'] # Order by name by default
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.job_title})"
+
+class ArtisanImage(models.Model):
+    artisan = models.ForeignKey(Artisan, on_delete=models.CASCADE, related_name='gallery_images',
+                                help_text="The artisan this image belongs to.")
+    image = models.ImageField(upload_to='artisan_galleries/',
+                                help_text="Upload an image for the artisan's gallery.")
+    description = models.CharField(max_length=255, blank=True, null=True,
+                                    help_text="Optional description for the image.")
+
+    class Meta:
+        verbose_name = "Artisan Gallery Image"
+        verbose_name_plural = "Artisan Gallery Images"
+        ordering = ['id'] # Order by ID for consistent display
+
+    def __str__(self):
+        return f"Image for {self.artisan.name}"
+
 
 class Professional(models.Model):
-    image = models.ImageField(upload_to='professionals/', blank=True, null=True)
-    name = models.CharField(max_length=100)
-    job_title = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    # Core Information
+    image = models.ImageField(upload_to='professionals/', blank=True, null=True,
+                                help_text="Upload a main profile picture for the professional.")
+    name = models.CharField(max_length=100,
+                            help_text="Full name of the professional.")
+    job_title = models.CharField(max_length=100,
+                                help_text="e.g., Accountant, Lawyer, Architect.")
+    
+    # Contact Information
+    phone_number = models.CharField(max_length=20, blank=True, null=True,
+                                    help_text="Primary phone number for contact.")
+    email = models.EmailField(blank=True, null=True,
+                                help_text="Email address for business inquiries.")
+    
+    # Business Details
+    location = models.CharField(max_length=200, blank=True, null=True,
+                                help_text="Physical location or service area.")
+    business_description = CKEditor5Field(config_name='default', blank=True, null=True,
+                                            help_text="A brief description of their professional service.")
+    products_services = CKEditor5Field(config_name='default', blank=True, null=True,
+                                        help_text="Detailed list of services offered.")
+    working_hours = models.CharField(max_length=200, blank=True, null=True,
+                                    help_text="e.g., Mon-Fri: 9 AM - 5 PM.")
+    
+    # Rating and Reviews (for star preview)
+    rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0,
+                                help_text="Average rating based on reviews (e.g., 4.8).")
+    num_reviews = models.IntegerField(default=0,
+                                        help_text="Total number of reviews received.")
+
+    class Meta:
+        verbose_name = "Professional"
+        verbose_name_plural = "Professionals"
+        ordering = ['name'] # Order by name by default
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.job_title})"
+
+
+class ProfessionalImage(models.Model):
+    professional = models.ForeignKey(Professional, on_delete=models.CASCADE, related_name='gallery_images',
+                                        help_text="The professional this image belongs to.")
+    image = models.ImageField(upload_to='professional_galleries/',
+                                help_text="Upload an image for the professional's gallery.")
+    description = models.CharField(max_length=255, blank=True, null=True,
+                                    help_text="Optional description for the image.")
+
+    class Meta:
+        verbose_name = "Professional Gallery Image"
+        verbose_name_plural = "Professional Gallery Images"
+        ordering = ['id'] # Order by ID for consistent display
+
+    def __str__(self):
+        return f"Image for {self.professional.name}"
 
 # cda_app/models.py
 from django.db import models
