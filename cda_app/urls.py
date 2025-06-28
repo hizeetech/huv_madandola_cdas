@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+
 from .views import reply_to_wish
 
 urlpatterns = [
@@ -41,4 +42,5 @@ urlpatterns = [
     path('executives/past/', views.past_executives, name='past_executives'),
     path('executives/present/', views.present_executives, name='present_executives'),
     path('birthdays/', views.BirthdayCalendarView.as_view(), name='birthday_calendar'),
+    path('community-policy/', views.community_policy_view, name='community_policy'),
 ]

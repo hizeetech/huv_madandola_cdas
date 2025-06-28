@@ -152,7 +152,7 @@
                 <div class="card-body py-2">
                     {% for info in community_info %}
                     <div class="community-info-card mb-2 p-2 bg-light rounded">
-                        <h5 class="card-title text-primary">{{ info.title }}</h5>
+                        <h5 class="card-title text-primary">{{ info.title|striptags }}</h5>
                         <div class="rich-content">
                             {{ info.content|safe }}
                         </div>
@@ -334,7 +334,7 @@
                                 {% if celebrant.image %}
                                 <img src="{{ celebrant.image.url }}" class="rounded-circle shadow mb-1 border border-3 border-warning" alt="{{ celebrant.name }}" width="150" height="150"> {% endif %}
                                 <h5>{{ celebrant.name }}</h5>
-                                <p class="text-muted">{{ celebrant.admin_wishes }}</p>
+                                <p class="text-muted">{{ celebrant.admin_wishes|striptags }}</p>
 
                                 <!-- Well Wishes Display -->
                                 <div class="well-wishes-container bg-light p-2 rounded">

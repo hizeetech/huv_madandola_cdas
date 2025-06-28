@@ -673,3 +673,16 @@ class SiteSettings(models.Model):
 
     def __str__(self):
         return "Site Settings"
+
+# Create your models here.
+
+class CommunityPolicy(models.Model):
+    title = models.CharField(max_length=200)
+    content = CKEditor5Field('Text', config_name='extends')
+    published_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Community Policies"
+
+    def __str__(self):
+        return self.title

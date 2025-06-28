@@ -11,6 +11,7 @@ from .forms import CustomUserCreationForm, CustomAuthenticationForm
 from .forms import AdvertItemForm, AdvertImageFormSet, DonationProofForm
 from .models import ProjectDonation
 from django.contrib import messages
+from .models import CommunityPolicy
 from .models import (
     WellWishes,
     CDA, Levy, UserLevy, Payment, ExecutiveMember, Defaulter, 
@@ -222,6 +223,14 @@ def home(request):
 
     context.update(get_project_donation_modal_context())
     return render(request, 'home.html', context)
+
+@login_required
+def community_policy_view(request):
+    policies = CommunityPolicy.objects.all().order_by('-published_date')
+    context = {
+        'policies': policies
+    }
+    return render(request, 'community_policy.html', context)
 
 
 @login_required

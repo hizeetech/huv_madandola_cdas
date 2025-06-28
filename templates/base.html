@@ -142,7 +142,7 @@
 
 <body>
     <div class="content-overlay">
-        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #343a40;">
+        <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: black;">
             <div class="container-fluid">
                 <div class="navbar-left-image">
                     {% if left_image %}
@@ -228,6 +228,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'project_donations_list' %}">Project Donations</a>
                         </li>
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'community_policy' %}">Community Policy</a>
+                        </li>
+                        {% endif %}
                         {% if user.is_staff %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Portal</a>

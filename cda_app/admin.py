@@ -8,7 +8,7 @@ from django.contrib import admin, messages
 from django.urls import path
 
 from django.utils import timezone
-from .models import BirthdayCelebrant
+from .models import BirthdayCelebrant, CommunityPolicy
 from .utils import send_birthday_email
 
 from django.shortcuts import redirect, get_object_or_404
@@ -191,6 +191,14 @@ class WellWishesAdmin(admin.ModelAdmin):
     search_fields = ('sender_name', 'message')
 
 admin.site.register(WellWishes, WellWishesAdmin)
+
+@admin.register(CommunityPolicy)
+class CommunityPolicyAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
+    }
+    list_display = ('title', 'published_date')
+    search_fields = ('title', 'content')
 
 @admin.register(CommitteeAchievement)
 class CommitteeAchievementAdmin(admin.ModelAdmin):
