@@ -1,9 +1,9 @@
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db import models
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
 from datetime import date
-
+from django.db.models import Prefetch
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 
@@ -18,7 +18,7 @@ from .models import (
     Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember,
     CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage,
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal, ProjectDonationModal,
-    BirthdayCelebrant,
+    BirthdayCelebrant, Banner,
     ArtisanImage, ProfessionalImage # Ensure these are imported if used directly, though prefetch_related is usually enough
 )
 
@@ -129,15 +129,17 @@ def admin_reject_advert(request, advert_id):
     return redirect('admin_advert_approval')
 
 
-from django.db.models import Q
-from django.utils import timezone
-from .models import BirthdayCelebrant  # make sure it's imported
 from .utils import send_birthday_email, get_project_donation_modal_context
 from .forms import WellWishesForm
 
 def home(request):
     today = timezone.now().date()
 
+    # Fetch active banners for left and right positions
+    # Using .first() to get a single instance or None
+    left_banner = Banner.objects.filter(position='left', is_active=True).first()
+    right_banner = Banner.objects.filter(position='right', is_active=True).first()
+    
     executive_members = ExecutiveMember.objects.all()
     committees = Committee.objects.all()
     upcoming_events = Event.objects.all().order_by('date')
@@ -220,6 +222,8 @@ def home(request):
         'next_birthday': next_birthday,
         'days_until_next': days_until_next,
         'well_wishes_form': form,
+        'left_banner': left_banner,
+        'right_banner': right_banner,
     }
 
     context.update(get_project_donation_modal_context())
@@ -461,9 +465,6 @@ def send_payment_proof_email(levy, user):
         html_message=html_message,
     )
     
-    
-from .forms import CustomUserChangeForm  # Make sure to import the form
-
 # cda_app/views.py
 from .forms import CustomUserChangeForm, CustomPasswordChangeForm
 
