@@ -21,7 +21,7 @@ from .models import (
     Event, CommunityInfo, Defaulter, NavbarImage, PaidMember,
     Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement,
     AdvertCategory, AdvertItem, AdvertImage,
-    ProjectDonation, ProjectImage, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes,
+    ProjectDonation, ProjectImage, Banner, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes,
     Artisan, ArtisanImage, Professional, ProfessionalImage # Import new image models and updated Artisan/Professional
 )
 
@@ -622,3 +622,36 @@ admin.site.register(AdvertCategory)
 admin.site.register(AdvertImage)
 admin.site.register(ProjectImage)
 admin.site.register(DonationProof)
+
+
+
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ('title', 'position', 'is_active', 'display_image_preview', 'target_url', 'created_at')
+    list_filter = ('position', 'is_active')
+    search_fields = ('title', 'target_url')
+    list_editable = ('is_active',) # Allow direct editing of active status from list view
+    readonly_fields = ('created_at', 'updated_at', 'display_image_preview') # Add image preview as readonly
+
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'image', 'position', 'is_active')
+        }),
+        ('Linking', {
+            'fields': ('target_url',),
+            'description': 'Optional: Link the banner to a specific URL.'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',), # Make these collapsible
+        }),
+    )
+
+    def display_image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 80px; max-width: 150px; object-fit: contain; border-radius: 5px;" />',
+                            obj.image.url)
+        return "No Image"
+    display_image_preview.short_description = "Image Preview"

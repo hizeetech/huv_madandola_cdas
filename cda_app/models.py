@@ -781,3 +781,45 @@ class CommunityPolicy(models.Model):
 
     def __str__(self):
         return self.title
+
+
+
+
+
+
+class Banner(models.Model):
+    """
+    Model for advertisement banners displayed on the homepage.
+    """
+    POSITION_CHOICES = [
+        ('left', 'Left Sidebar'),
+        ('right', 'Right Sidebar'),
+        # You could add 'top', 'bottom', 'main_content_area' if needed in the future
+    ]
+
+    title = models.CharField(max_length=200, help_text="Short title for the banner (e.g., 'Discount Offer').")
+    image = models.ImageField(upload_to='banners/',
+                              help_text="Upload the banner image.")
+    target_url = models.URLField(max_length=500, blank=True, null=True,
+                                 help_text="Optional: URL to navigate to when the banner is clicked (e.g., a product page).")
+    position = models.CharField(max_length=10, choices=POSITION_CHOICES, unique=True,
+                                help_text="Where this banner will be displayed on the page. Only one banner per position.")
+    is_active = models.BooleanField(default=True,
+                                    help_text="Check to make this banner active and visible on the site.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Website Banner"
+        verbose_name_plural = "Website Banners"
+        ordering = ['position']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_position_display()})"
+
+    def clean(self):
+        # Ensure only one active banner per position
+        if self.is_active and Banner.objects.filter(position=self.position, is_active=True).exclude(pk=self.pk).exists():
+            from django.core.exceptions import ValidationError
+            raise ValidationError(f"An active banner already exists for the '{self.get_position_display()}' position. Please deactivate it first or choose a different position.")
+
