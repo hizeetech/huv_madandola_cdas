@@ -122,8 +122,8 @@
                             {% for member in paid_members %}
                             <div class="paid-member-card">
                                 {% if member.image %}
-                                <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle shadow"> {% else %}
-                                <img src="{% static 'images/default_profile.png' %}" alt="Default Image" class="rounded-circle shadow"> {% endif %}
+                                <img src="{{ member.image.url }}" alt="{{ member.name }}" class="rounded-circle shadow" width="100" height="100"> {% else %}
+                                <img src="{% static 'images/default_profile.png' %}" alt="Default Image" class="rounded-circle shadow" width="100" height="100"> {% endif %}
                                 <h5 class="mt-2">{{ member.name }}</h5>
                                 <p><strong>CDA:</strong> {{ member.cda }}</p>
                                 <p><strong>Amount Paid:</strong> ₦{{ member.amount_paid|intcomma }}</p>
@@ -439,7 +439,7 @@
                             <tr>
                                 <td>
                                     {% if defaulter.image %}
-                                    <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" class="rounded-circle" width="60" height="60"> {% else %}
+                                    <img src="{{ defaulter.image.url }}" alt="{{ defaulter.name }}" class="rounded-circle" width="70" height="70"> {% else %}
                                     <span class="text-muted">N/A</span> {% endif %}
                                 </td>
                                 <td>{{ defaulter.name }}</td>
