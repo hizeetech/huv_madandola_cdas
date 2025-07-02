@@ -96,6 +96,16 @@
 </script>
 {% endif %}
 
+{% if birthday_wish_frame %}
+    {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var birthdayModal = new bootstrap.Modal(document.getElementById('birthdayWishModal'));
+            birthdayModal.show();
+        });
+    </script>
+{% endif %}
+
 <!-- Hero Section with reduced padding -->
 <section class="hero-section bg-primary text-white py-3">
     <div class="container text-center">
@@ -346,6 +356,9 @@
                                     </div>
                                     {% empty %}
                                     <p class="text-center text-muted">No well wishes yet.</p>
+                            {% if birthday_wish_frame %}
+                                {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %}
+                            {% endif %}
                                     {% endfor %}
                                 </div>
 

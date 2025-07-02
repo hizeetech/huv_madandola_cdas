@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
 
 from .views import reply_to_wish
 
@@ -16,6 +17,8 @@ urlpatterns = [
     # Authentication URLs
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
+    path('birthday-wish/<int:wish_id>/', views.birthday_wish_view, name='birthday_wish'),
     
     # Existing URLs
     path('', views.home, name='home'),

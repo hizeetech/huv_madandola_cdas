@@ -771,6 +771,23 @@ class SiteSettings(models.Model):
 
 # Create your models here.
 
+from django.db import models
+
+class BirthdayWish(models.Model):
+    logo = models.ImageField(upload_to='birthday_wishes/logos/', blank=True, null=True)
+    image = models.ImageField(upload_to='birthday_wishes/images/', blank=True, null=True)
+    heading = models.CharField(max_length=255, default="Happy Birthday")
+    # Calendar details can be stored as text or a specific date field if needed
+    # For now, let's assume it's part of the dynamic text content or handled via a date field
+    birth_date = models.DateField(blank=True, null=True)
+    name = models.CharField(max_length=255)
+    wishes_text = models.TextField()
+    frame_background = models.ImageField(upload_to='birthday_wishes/backgrounds/', blank=True, null=True)
+
+    def __str__(self):
+        return f"Birthday Wish for {self.name}"
+
+
 class CommunityPolicy(models.Model):
     title = models.CharField(max_length=200)
     content = CKEditor5Field('Text', config_name='extends')

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
 from datetime import date
 from django.db.models import Prefetch
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
@@ -34,6 +34,18 @@ def get_project_donation_modal_context():
     except ProjectDonationModal.DoesNotExist:
         modal_content = None
     return {'project_donation_modal': modal_content}
+
+def get_site_settings():
+    return SiteSetting.objects.first()
+
+from .models import BirthdayWish
+
+def birthday_wish_view(request, wish_id):
+    wish = get_object_or_404(BirthdayWish, pk=wish_id)
+    context = {
+        'wish': wish
+    }
+    return render(request, 'cda_app/birthday_wish_template.html', context)
 
 from django.contrib.auth import get_user_model
 from .models import CustomUser
@@ -150,6 +162,9 @@ def home(request):
     right_image = NavbarImage.objects.filter(position='right').first()
     project_donations = ProjectDonation.objects.all().prefetch_related('images')
 
+    # Fetch the latest BirthdayWish object
+    birthday_wish_frame = BirthdayWish.objects.order_by('-id').first() # Or filter by date if needed
+
     selected_cda = request.GET.get('cda', '').strip()
     selected_debt_for = request.GET.get('debt_for', '').strip()
 
@@ -224,6 +239,7 @@ def home(request):
         'well_wishes_form': form,
         'left_banner': left_banner,
         'right_banner': right_banner,
+        'birthday_wish_frame': birthday_wish_frame,
     }
 
     context.update(get_project_donation_modal_context())
