@@ -232,8 +232,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'community_policy' %}">Community Policy</a>
                         </li>
-                        {% endif %}
-                        {% if user.is_staff %}
+                        {% endif %} {% if user.is_staff %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'admin_dashboard' %}">Admin Portal</a>
                         </li>
@@ -313,7 +312,7 @@
             var s1 = document.createElement("script"),
                 s0 = document.getElementsByTagName("script")[0];
             s1.async = true;
-            s1.src = 'https://embed.tawk.to/6852de8d76ea12190bc86af2/1iu1ran2o';
+            s1.src = 'https://embed.tawk.to/6866de839a907e19109e8054/1iv8tacno';
             s1.charset = 'UTF-8';
             s1.setAttribute('crossorigin', '*');
             s0.parentNode.insertBefore(s1, s0);
