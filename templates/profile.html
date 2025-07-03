@@ -72,8 +72,8 @@
                                             <td>
                                                 {% if levy.status == 'unpaid' or levy.status == 'rejected' %}
                                                 <a href="{% url 'upload_regular_levy_proof' levy.id %}" class="btn btn-primary btn-sm">
-                                                     Pay Now
-                                                 </a> {% elif levy.status == 'pending' %}
+                                                    Pay Now
+                                                </a> {% elif levy.status == 'pending' %}
                                                 <button class="btn btn-warning btn-sm" disabled>
                                                     Pending
                                                 </button> {% elif levy.status == 'paid' %}
@@ -184,17 +184,17 @@
 </div>
 
 
-                        <input class="form-control" type="file" id="proofImage" name="proof_image" required accept="image/jpeg, image/png">
-                        <div class="form-text">Upload a clear image of your payment receipt (JPEG or PNG, max 2MB).</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit Proof</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<!-- <input class="form-control" type="file" id="proofImage" name="proof_image" required accept="image/jpeg, image/png">
+<div class="form-text">Upload a clear image of your payment receipt (JPEG or PNG, max 2MB).</div> -->
+</div>
+</div>
+<!-- <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-primary">Submit Proof</button>
+</div> -->
+</form>
+</div>
+</div>
 </div>
 
 <!-- Feedback Modal -->

@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% load custom_filters %} {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Upload Payment Proof for Project: {{ project_donation.title }}</h2>
+    <h2 class="mb-4">Upload Payment Proof for Project: {{ project_donation.title|striptags }}</h2>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %} {% for field in form %}
         <div class="mb-3">

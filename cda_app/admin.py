@@ -6,7 +6,7 @@ from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.html import format_html
 from django.contrib import admin, messages
 from django.urls import path
-
+from django.utils.html import strip_tags
 from django.utils import timezone
 from .models import BirthdayCelebrant, CommunityPolicy
 from .utils import send_birthday_email
@@ -30,7 +30,11 @@ class ProjectDonationModalAdmin(admin.ModelAdmin):
     formfield_overrides = {
         CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
     }
-    list_display = ('title', 'image', 'button_link')
+    list_display = ('stripped_title', 'image', 'button_link')
+
+    def stripped_title(self, obj):
+        return strip_tags(obj.title)
+    stripped_title.short_description = "Title"
     search_fields = ('title', 'content')
 
 
@@ -40,8 +44,13 @@ from .forms import CommunityInfoForm
 
 @admin.register(CommunityInfo)
 class CommunityInfoAdmin(admin.ModelAdmin):
+    list_display = ('stripped_title', 'published_date')
+
+    def stripped_title(self, obj):
+        return strip_tags(obj.title)
+    stripped_title.short_description = "Title"
     form = CommunityInfoForm
-    list_display = ['title', 'published_date']
+
 
 
 from django.contrib.admin import SimpleListFilter
@@ -203,6 +212,11 @@ class CommunityPolicyAdmin(admin.ModelAdmin):
 
 @admin.register(CommitteeAchievement)
 class CommitteeAchievementAdmin(admin.ModelAdmin):
+    list_display = ('stripped_title', 'committee', 'date')
+
+    def stripped_title(self, obj):
+        return strip_tags(obj.title)
+    stripped_title.short_description = "Title"
     formfield_overrides = {
         models.TextField: {'widget': CKEditor5Widget(config_name='default')},
     }
@@ -309,7 +323,11 @@ class EventAdmin(admin.ModelAdmin):
     formfield_overrides = {
         CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
     }
-    list_display = ('title', 'date', 'time', 'location', 'image')
+    list_display = ('stripped_title', 'date', 'time', 'location', 'image')
+
+    def stripped_title(self, obj):
+        return strip_tags(obj.title)
+    stripped_title.short_description = 'Title'
     search_fields = ('title', 'location')
     list_filter = ('date', 'location')
 
@@ -374,8 +392,13 @@ class ProjectDonationAdmin(admin.ModelAdmin):
     formfield_overrides = {
         CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
     }
-    list_display = ('title', 'estimated_cost', 'bank_name',
+    list_display = ('stripped_title', 'estimated_cost', 'bank_name',
                     'account_number', 'beneficiary', 'reference_number')
+
+    def stripped_title(self, obj):
+        return strip_tags(obj.title)
+    
+    stripped_title.short_description = 'Title (Clean)'
     search_fields = ('title', 'bank_name', 'beneficiary')
     inlines = [ProjectImageInline, DonationProofInline]
 
@@ -612,11 +635,18 @@ class CommitteeAdmin(admin.ModelAdmin):
         models.TextField: {'widget': CKEditor5Widget(config_name='default')},
     }
 admin.site.register(CommitteeMember)
+from django.utils.html import strip_tags
+
 @admin.register(CommitteeToDo)
 class CommitteeToDoAdmin(admin.ModelAdmin):
+    list_display = ('committee', 'is_completed', 'due_date')
     formfield_overrides = {
         CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
     }
+
+    def stripped_task(self, obj):
+        return strip_tags(obj.task)
+    stripped_task.short_description = 'Task'
 
 admin.site.register(AdvertCategory)
 admin.site.register(AdvertImage)

@@ -1,5 +1,6 @@
 from django.db.models import Q, F
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
 from datetime import date
@@ -631,19 +632,29 @@ def create_advert(request):
 
 @login_required
 def artisans_list(request):
-    # Prefetch gallery_images to reduce database queries
+    job_title_query = request.GET.get('job_title', '')
     artisans = Artisan.objects.all().prefetch_related('gallery_images')
+
+    if job_title_query:
+        artisans = artisans.filter(job_title__icontains=job_title_query)
+
     context = {
-        'artisans': artisans
+        'artisans': artisans,
+        'job_title_query': job_title_query
     }
     return render(request, 'artisans_list.html', context)
 
 @login_required
 def professionals_list(request):
-    # Prefetch gallery_images to reduce database queries
+    job_title_query = request.GET.get('job_title', '')
     professionals = Professional.objects.all().prefetch_related('gallery_images')
+
+    if job_title_query:
+        professionals = professionals.filter(job_title__icontains=job_title_query)
+
     context = {
-        'professionals': professionals
+        'professionals': professionals,
+        'job_title_query': job_title_query
     }
     return render(request, 'professionals_list.html', context)
 

@@ -219,6 +219,18 @@
 </style>
 {% endblock %} {% block content %}
 <div class="container mt-5 mb-5">
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <form action="" method="get" class="form-inline justify-content-center">
+                <div class="input-group w-100">
+                    <input type="text" name="job_title" class="form-control form-control-lg" placeholder="Search by Job Title..." value="{{ request.GET.job_title|default:'' }}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary btn-lg" type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
     <h2 class="text-center mb-5 text-dark font-weight-bold">Our Esteemed Professionals</h2>
 
     <div class="d-flex flex-column align-items-center"> {# Use flex-column to stack the professional rows #} {% for professional in professionals %}

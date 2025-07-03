@@ -9,7 +9,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Upload Proof for {{ levy.get_month_display }} {{ levy.year }} - {{ levy.get_payment_for_display }}</h4>
+                    <h4 class="mb-0">Upload Proof for {{ levy.get_month_display|striptags }} {{ levy.year|striptags }} - {{ levy.get_payment_for_display|striptags }}</h4>
                 </div>
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">

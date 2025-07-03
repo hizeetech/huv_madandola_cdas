@@ -4,7 +4,7 @@
         <div class="col-md-8 offset-md-2">
             <div class="card my-4">
                 <div class="card-header">
-                    <h2>{{ event.title }}</h2>
+                    <h2>{{ event.title|striptags }}</h2>
                 </div>
                 <div class="card-body">
                     {% if event.image %}

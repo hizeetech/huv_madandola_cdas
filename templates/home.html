@@ -64,7 +64,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background-color: #f8f9fa; border-radius: 10px;">
             <div class="modal-header">
-                <h5 class="modal-title text-center w-100 fw-bold" id="projectDonationModalLabel">{{ project_donation_modal.title }}</h5>
+                <h5 class="modal-title text-center w-100 fw-bold" id="projectDonationModalLabel">{{ project_donation_modal.title|striptags }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
@@ -72,7 +72,7 @@
                     {% if project_donation_modal.image %}
                     <img src="{{ project_donation_modal.image.url }}" class="img-fluid mb-3 mx-auto d-block rounded" alt="{{ project_donation_modal.title }}"> {% endif %}
                     <div class="modal-content-text">
-                        {{ project_donation_modal.content|safe }}
+                        {{ project_donation_modal.content|striptags }}
                     </div>
                     {% if project_donation_modal.button_link %}
                     <a href="{{ project_donation_modal.button_link }}" class="btn btn-primary mt-3 px-4 py-2">{{ project_donation_modal.title }}</a> {% endif %}
@@ -203,10 +203,10 @@
                             {% for project in project_donations %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ project.title }}</td>
+                                <td>{{ project.title|striptags }}</td>
                                 <td>
-                                    <span id="short-description-{{ project.id }}">{{ project.description|truncatechars:50 }}</span>
-                                    <span id="full-description-{{ project.id }}" style="display: none;">{{ project.description }}</span> {% if project.description|length > 50 %}
+                                    <span id="short-description-{{ project.id }}">{{ project.description|striptags|truncatechars:50 }}</span>
+                                    <span id="full-description-{{ project.id }}" style="display: none;">{{ project.description|striptags }}</span> {% if project.description|length > 50 %}
                                     <a href="#" onclick="toggleDescription({{ project.id }}); return false;" id="toggle-link-{{ project.id }}" class="text-primary">Read More</a> {% endif %}
                                 </td>
                                 <td>{{ project.reference_number }}</td>
@@ -301,7 +301,7 @@
                                         <img src="{{ event.image.url }}" class="card-img-top rounded" alt="{{ event.title }}"> {% else %}
                                         <img src="{% static 'images/default_event.png' %}" class="card-img-top rounded" alt="Default Event Image"> {% endif %}
                                         <div class="card-body p-2">
-                                            <h5 class="card-title">{{ event.title }}</h5>
+                                            <h5 class="card-title">{{ event.title|striptags }}</h5>
                                             <p class="card-text text-muted">{{ event.description|truncatechars:100|safe }}</p>
                                             <div class="d-flex justify-content-between small text-muted">
                                                 <span><i class="far fa-calendar-alt me-1"></i> {{ event.date|date:"M d, Y" }}</span>
