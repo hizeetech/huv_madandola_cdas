@@ -75,7 +75,7 @@
                         {{ project_donation_modal.content|striptags }}
                     </div>
                     {% if project_donation_modal.button_link %}
-                    <a href="{{ project_donation_modal.button_link }}" class="btn btn-primary mt-3 px-4 py-2">{{ project_donation_modal.title }}</a> {% endif %}
+                    <a href="{% url 'project_donations_list' %}" class="btn btn-primary mt-3 px-4 py-2"><i class="bi bi-cash-coin"></i> DONATE NOW</a> {% endif %}
                 </div>
             </div>
             <div class="modal-footer p-3">
@@ -94,16 +94,13 @@
         myModal.show();
     });
 </script>
-{% endif %}
-
-{% if birthday_wish_frame %}
-    {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var birthdayModal = new bootstrap.Modal(document.getElementById('birthdayWishModal'));
-            birthdayModal.show();
-        });
-    </script>
+{% endif %} {% if birthday_wish_frame %} {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var birthdayModal = new bootstrap.Modal(document.getElementById('birthdayWishModal'));
+        birthdayModal.show();
+    });
+</script>
 {% endif %}
 
 <!-- Hero Section with reduced padding -->
@@ -143,6 +140,40 @@
                             {% empty %}
                             <div class="paid-member-card">
                                 <p>No paid members found.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Special Donations Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h2 class="h5 mb-0 text-center text-uppercase fw-bold">Members Who Have Donated Specially</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="paid-members-container">
+                        <div class="paid-members-slider">
+                            {% for donation in special_donations %}
+                            <div class="paid-member-card">
+                                {% if donation.receipt_image %}
+                                <a href="{{ donation.receipt_image.url }}" data-lightbox="donation-receipts" data-title="{{ donation.title }} - {{ donation.donator_name }}">
+                                    <img src="{{ donation.receipt_image.url }}" alt="{{ donation.title }}" class="img-fluid rounded shadow" style="width: 100px; height: 100px; object-fit: cover;">
+                                </a> {% else %}
+                                <img src="{% static 'images/no_receipt.png' %}" alt="No Receipt" class="img-fluid rounded shadow" style="width: 100px; height: 100px; object-fit: cover;"> {% endif %}
+                                <h5 class="mt-2">{{ donation.title }}</h5>
+                                <p><strong>Ref No:</strong> {{ donation.reference_number }}</p>
+                                <p><strong>Donator:</strong> {{ donation.donator_name }}</p>
+                                <p><strong>Amount:</strong> ₦{{ donation.donated_amount|intcomma }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="paid-member-card">
+                                <p>No special donations found.</p>
                             </div>
                             {% endfor %}
                         </div>
@@ -356,10 +387,7 @@
                                     </div>
                                     {% empty %}
                                     <p class="text-center text-muted">No well wishes yet.</p>
-                            {% if birthday_wish_frame %}
-                                {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %}
-                            {% endif %}
-                                    {% endfor %}
+                                    {% if birthday_wish_frame %} {% include 'cda_app/birthday_wish_template.html' with birthday_wish=birthday_wish_frame %} {% endif %} {% endfor %}
                                 </div>
 
                                 <!-- Send Well Wish Form -->

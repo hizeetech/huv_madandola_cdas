@@ -22,8 +22,20 @@ from .models import (
     Committee, CommitteeMember, CommitteeToDo, CommitteeAchievement,
     AdvertCategory, AdvertItem, AdvertImage,
     ProjectDonation, ProjectImage, Banner, DonationProof, CustomUser, RegularLevy, ProjectDonationModal, BirthdayCelebrant, WellWishes,
-    Artisan, ArtisanImage, Professional, ProfessionalImage, BirthdayWish # Import new image models and updated Artisan/Professional
+    Artisan, ArtisanImage, Professional, ProfessionalImage, BirthdayWish, SpecialDonation # Import new image models and updated Artisan/Professional
 )
+
+@admin.register(SpecialDonation)
+class SpecialDonationAdmin(admin.ModelAdmin):
+    list_display = ('title', 'reference_number', 'donator_name', 'donated_amount', 'donation_date')
+    search_fields = ('title', 'reference_number', 'donator_name')
+    list_filter = ('donation_date',)
+    readonly_fields = ('donation_date',)
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'reference_number', 'donator_name', 'donated_amount', 'receipt_image')
+        }),
+    )
 
 @admin.register(ProjectDonationModal)
 class ProjectDonationModalAdmin(admin.ModelAdmin):

@@ -1,10 +1,4 @@
-{% extends 'base.html' %}
-{% load humanize %}
-{% load static %}
-
-{% block title %}Project Donations{% endblock %}
-
-{% block extra_js %}
+{% extends 'base.html' %} {% load humanize %} {% load static %} {% block title %}Project Donations{% endblock %} {% block extra_js %}
 <script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
 <script>
     function toggleDescription(projectId) {
@@ -63,9 +57,7 @@
         });
     });
 </script>
-{% endblock extra_js %}
-
-{% block content %}
+{% endblock extra_js %} {% block content %}
 <div class="container mt-5">
     <h2 class="mb-4">Project Donations</h2>
     <div class="table-responsive">
@@ -102,7 +94,8 @@
                         {% empty %} No Images {% endfor %}
                     </td>
                     <td>
-                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title|striptags }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}" data-reference="{{ project.reference_number }}">
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#donateModal" data-title="{{ project.title|striptags }}" data-bank="{{ project.bank_name }}" data-account="{{ project.account_number }}" data-beneficiary="{{ project.beneficiary }}"
+                            data-reference="{{ project.reference_number }}">
                             <i class="bi bi-cash-coin"></i> Donate
                         </button>
                     </td>

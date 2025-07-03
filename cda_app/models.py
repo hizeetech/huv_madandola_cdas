@@ -199,6 +199,23 @@ class ExecutiveMember(models.Model):
     def __str__(self):
         return f"{self.name} ({self.position})"
 
+
+class SpecialDonation(models.Model):
+    title = models.CharField(max_length=255)
+    reference_number = models.CharField(max_length=100, unique=True)
+    donator_name = models.CharField(max_length=255)
+    donated_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    receipt_image = models.ImageField(upload_to='special_donation_receipts/', blank=True, null=True)
+    donation_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.donator_name}"
+
+    class Meta:
+        verbose_name = "Special Donation"
+        verbose_name_plural = "Special Donations"
+        ordering = ['-donation_date']
+
 class Defaulter(models.Model):
     image = models.ImageField(upload_to='defaulter_images/', blank=True, null=True)
     name = models.CharField(max_length=100)

@@ -19,9 +19,10 @@ from .models import (
     Event, CommunityInfo, NavbarImage, PaidMember, Committee, CommitteeMember,
     CommitteeToDo, CommitteeAchievement, AdvertCategory, AdvertItem, AdvertImage,
     Artisan, Professional, ProjectDonation, ProjectImage, DonationProof, Proposal, ProjectDonationModal,
-    BirthdayCelebrant, Banner,
+    BirthdayCelebrant, Banner, SpecialDonation,
     ArtisanImage, ProfessionalImage # Ensure these are imported if used directly, though prefetch_related is usually enough
 )
+
 
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
@@ -162,6 +163,7 @@ def home(request):
     left_image = NavbarImage.objects.filter(position='left').first()
     right_image = NavbarImage.objects.filter(position='right').first()
     project_donations = ProjectDonation.objects.all().prefetch_related('images')
+    special_donations = SpecialDonation.objects.all().order_by('-donation_date')
 
     # Fetch the latest BirthdayWish object
     birthday_wish_frame = BirthdayWish.objects.order_by('-id').first() # Or filter by date if needed
@@ -234,13 +236,14 @@ def home(request):
         'selected_cda': selected_cda,
         'selected_debt_for': selected_debt_for,
         'project_donations': project_donations,
-        'birthday_celebrants': birthday_celebrants,
-        'next_birthday': next_birthday,
-        'days_until_next': days_until_next,
-        'well_wishes_form': form,
+        'special_donations': special_donations,
+        'birthday_wish_frame': birthday_wish_frame,
         'left_banner': left_banner,
         'right_banner': right_banner,
-        'birthday_wish_frame': birthday_wish_frame,
+        'left_image': left_image,
+        'right_image': right_image,
+        'project_donation_modal': get_project_donation_modal_context()['project_donation_modal'],
+        'well_wishes_form': WellWishesForm(),
     }
 
     context.update(get_project_donation_modal_context())
