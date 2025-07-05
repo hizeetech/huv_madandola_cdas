@@ -651,7 +651,7 @@ from django.utils.html import strip_tags
 
 @admin.register(CommitteeToDo)
 class CommitteeToDoAdmin(admin.ModelAdmin):
-    list_display = ('committee', 'is_completed', 'due_date')
+    list_display = ('stripped_task', 'committee', 'is_completed', 'due_date')
     formfield_overrides = {
         CKEditor5Field: {'widget': CKEditor5Widget(config_name='default')},
     }
